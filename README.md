@@ -19,8 +19,8 @@ This repo is for the winning senior design project from the University of Texas 
 
 ## Software To-do
 
-~~* Keypad inputs~~
-~~* LCD outputs~~
+* ~~Keypad inputs~~
+* ~~LCD outputs~~
 * Motor control outputs
 * Timer interrupt
 * IR sensor input
