@@ -9,6 +9,8 @@
 #define TFT_RST 0
 #define TFT_DC  8
 #define SLOTS   4
+#define motorHi 2
+#define motorLo 3
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_C, TFT_RST);
 
@@ -46,6 +48,12 @@ void setup() {
   tft.initR(INITR_BLACKTAB);
   tft.fillScreen(ST7735_WHITE);
   Serial.println("LCD initialized");
+  // init MOTOR
+  pinMode(motorHi, OUTPUT);
+  pinMode(motorLo, OUTPUT);
+  analogWrite(motorHi, 0);
+  analogWrite(motorLo, 0);
+  Serial.println("Motor pin initialized");
 }
 
 void loop() {
@@ -81,6 +89,7 @@ void loop() {
       key = keypad.waitForKey();
       if (pins[slot][i] != atoi(key)) {
         unlkWrong = true;
+        break;
       }
     }
 
@@ -97,8 +106,22 @@ void loop() {
     tft.setCursor(0, 20);
     tft.setTextColor(ST7735_BLUE);
     tft.setTextWrap(true);
+
+    // unlock motor 0.5s
+    analogWrite(motorHi, 0);
+    analogWrite(motorLo, 255);
+    delay(500);
+    analogWrite(motorLo, 0);
+    
     tft.print("Good job! You have 60 sec to get your bike.");
     // THIS IS WHERE WE START 60s TIMER AND USER GOES TO UNLOCK
+    delay(60000);
+
+    // lock motor, 0.5s
+    analogWrite(motorLo, 0);
+    analogWrite(motorHi, 255);
+    delay(500);
+    analogWrite(motorHi, 0);
   } else {
     // if the slot isn't, treat as locking
     
@@ -121,6 +144,7 @@ void loop() {
       key = keypad.waitForKey();
       if (pins[slot][j] != atoi(key)) {
         lockWrong = true;
+        break;
       }
     }
     
@@ -137,7 +161,22 @@ void loop() {
     tft.setCursor(0, 40);
     tft.setTextColor(ST7735_BLUE);
     tft.setTextWrap(true);
+
+    // unlock motor, 0.5s
+    analogWrite(motorHi, 0);
+    analogWrite(motorLo, 255);
+    delay(500);
+    analogWrite(motorLo, 0);
+    
     tft.print("Good job! You have 60 sec to lock your bike.");
     // THIS IS WHERE WE START 60s TIMER AND USER GOES TO LOCK
+
+    delay(60000);
+
+    // lock motor, 0.5s
+    analogWrite(motorLo, 0);
+    analogWrite(motorHi, 255);
+    delay(500);
+    analogWrite(motorHi, 0);
   }
 }
