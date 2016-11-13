@@ -21,8 +21,8 @@ This repo is for the winning senior design project from the University of Texas 
 
 * ~~Keypad inputs~~
 * ~~LCD outputs~~
-* Motor control outputs
-* Timer interrupt
+* ~~Motor control outputs~~
+* ~~Timer interrupt~~
 * IR sensor input
 * Reset/Start over button input (#)
 * Admin unlock view (multi-press)
