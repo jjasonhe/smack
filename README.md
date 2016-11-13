@@ -1,4 +1,4 @@
-# smack
+![Logo](logo.png)
 
 ## Synopsis
 
