@@ -11,13 +11,13 @@
 // [7] [8] [9]
 // [*] [0] [#]
 /* TESTING
-   P5.0	 COL1
-	 P5.1	 COL2
-	 P5.2  COL3
-	 P4.0  ROW1
-	 P4.1  ROW2
-	 P4.2  ROW3
-	 P4.3  ROW4
+	 P4.3 COL1
+	 P4.2 COL2
+	 P4.1 COL3
+	 P4.0 ROW1
+	 P5.2 ROW2
+	 P5.1 ROW3
+	 P5.0 ROW4
 */
 
 /* KEYPAD
@@ -31,6 +31,8 @@
 */
 
 #include <stdint.h>
+
+extern uint8_t timesUp;
 
 void SysTick_Init(uint32_t period);
 

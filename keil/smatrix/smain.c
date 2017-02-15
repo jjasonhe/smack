@@ -66,16 +66,31 @@ void EndCritical(long sr);    // restore I bit to previous value
 void WaitForInterrupt(void);  // low power mode
 
 #define SLOTS 4
-#define RACKNUM 1
-#define SEC_TEN 240000000			// assuming 24MHz clock? SMCLK?
+#define RACK 1
+#define SEC_TEN 30000000			// assuming 24MHz clock? SMCLK?
 #define SEC_TWO  48000000			// assuming 24MHz clock? SMCLK?
 #define SEC_30  720000000			// assuming 24MHz clock? SMCLK?
 
-volatile uint8_t key;
+/*volatile uint8_t key;
 uint8_t keyInt;
 uint8_t slot;
 uint8_t localStatus[SLOTS];			// 0 = free, 1 = taken
 uint8_t localPins[SLOTS][4];
+uint8_t timesUp;
+uint8_t keyPin[4];
+uint8_t wrongPin; */
+
+volatile uint8_t key;
+uint8_t localStatus[SLOTS] = {0,0,0,0};			// 0 = free, 1 = taken
+uint8_t localPins[SLOTS][4] = {
+	{0,0,0,0},
+	{0,0,0,0},
+	{0,0,0,0},
+	{0,0,0,0}
+};
+uint8_t slot;
+uint8_t pins[4];
+uint8_t taken;                  // 0 = free, 1 = taken
 uint8_t timesUp;
 
 void OneShot(uint32_t period){long sr;
@@ -103,23 +118,171 @@ void T32_INT1_IRQHandler(void){
 }
 
 int main(void) {
+  //ClockInit_48MHz();
+  LocksInit();
+  ButtsInit();
+  DetsInit();
+  ST7735_InitR(INITR_REDTAB);
+  KeypadInitLP();
+  //WiFiInit();
+	
+  while(1) {
+		ST7735_FillScreen(ST7735_RED);
+		timesUp = 0;
+		ST7735_SetCursor(0,13);
+		ST7735_OutString("        ");
+		
+    //localStatus = WiFiFetchStatus();
+    //localPins = WiFiFetchPins();
+    ST7735_SetCursor(0,0);
+    ST7735_OutString("pick slot");
+		
+		OneShot(SEC_TEN);
+		
+    do {
+      key = KeypadGet();
+      if ((key=='5')||(key=='6')||(key=='7')||(key=='8')||(key=='9')||(key=='0')||(key=='*')||(key=='#')) {
+        ST7735_SetCursor(0,1);
+        ST7735_OutString("invalid key");
+      } else if (!key) {
+        ST7735_SetCursor(0,1);
+        ST7735_OutString("           ");
+      }
+    } while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4'));
+		if (timesUp) {
+			timesUp = 0;
+			ST7735_SetCursor(0,13);
+			ST7735_OutString("TIMES UP");
+			continue;
+		}
+    ST7735_SetCursor(0,1);
+    ST7735_OutString("           ");
+	  slot = KeypadInt(key) - 1;
+		ST7735_SetCursor(0,14);
+		ST7735_OutCharSMACK(key);
+		
+		/*DEBUG
+		ST7735_SetCursor(0,2);
+		ST7735_OutString("WOOOOOOOOOO");
+		while(1) {
+			ST7735_SetCursor(0,3);
+			ST7735_OutCharSMACK(key);
+		};*/
+		
+		//localStatus = WiFiFetchStatus();
+    if (!localStatus[slot]) {
+			taken = 0;
+		} else {
+			taken = 1;
+		}
+    if (!taken) {
+      //WiFiPushStatus(RACK, slot, 1);
+			//DEBUG
+			ST7735_SetCursor(0,15);
+			ST7735_OutString("!taken");
+    } else {
+			//DEBUG
+			ST7735_SetCursor(0,15);
+			ST7735_OutString("taken!");
+		}
+    ST7735_SetCursor(0,2);
+    ST7735_OutString("enter pin");
+		
+		OneShot(SEC_TEN);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        ST7735_SetCursor(0,3);
+        ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			ST7735_SetCursor(0,13);
+			ST7735_OutString("TIMES UP");
+			continue;
+		}
+		ST7735_SetCursor(0,3);
+		ST7735_OutString("*          ");
+		pins[0] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        ST7735_SetCursor(0,3);
+        ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			ST7735_SetCursor(0,13);
+			ST7735_OutString("TIMES UP");
+			continue;
+		}
+		ST7735_SetCursor(0,3);
+		ST7735_OutString("* *        ");
+		pins[1] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        ST7735_SetCursor(0,3);
+        ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			ST7735_SetCursor(0,13);
+			ST7735_OutString("TIMES UP");
+			continue;
+		}
+		ST7735_SetCursor(0,3);
+		ST7735_OutString("* * *      ");
+		pins[2] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        ST7735_SetCursor(0,3);
+        ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			ST7735_SetCursor(0,13);
+			ST7735_OutString("TIMES UP");
+			continue;
+		}
+		ST7735_SetCursor(0,3);
+		ST7735_OutString("* * * *    ");
+		pins[3] = KeypadInt(key);
+		
+		while(1) {}
+  }
+}
+
+/*int mainMADETHATOLD(void) {
 	//Clock_Init48MHz();					// doesn't work with Keypad yet
-	KeypadInit();
 	LocksInit();
 	ButtsInit();
 	DetsInit();
 	ST7735_InitR(INITR_REDTAB);
-	ST7735_FillScreen(ST7735_RED);
-	ST7735_SetTextColor(ST7735_WHITE);
+	KeypadInitLP();
+	//ST7735_FillScreen(ST7735_RED);
+	//ST7735_SetTextColor(ST7735_WHITE);
 	//WiFiInit();
 	
 	while(1) {
 		//localStatus = WiFiFetchStatus();
 		//localPins = WiFiFetchPins();
 		
-		ST7735_FillScreen(ST7735_RED);
-		ST7735_OutString("Hi! Press # to begin.");
+		//ST7735_FillScreen(ST7735_RED);
+		ST7735_SetCursor(0,0);
+		ST7735_OutString("Hi! Press # to begin");
 		key = KeypadGet();
+		//ST7735_SetCursor(0,0);
+		//ST7735_OutChar(key);
 		if (key != '#') {
 			continue;
 		}
@@ -131,9 +294,15 @@ int main(void) {
 			// if diff, WiFiPushStatus();
 			//          WiFiPushPins();
 			
-			ST7735_FillScreen(ST7735_RED);
-			ST7735_OutString("Enter the slot number you want to access.");
+			ST7735_FillScreen(ST7735_BLACK);
+			ST7735_SetCursor(0,0);
+			ST7735_OutString("Enter the slot you");
+			ST7735_SetCursor(0,1);
+			ST7735_OutString("want to access.");
+			while (1) {
 			key = KeypadGet();
+			}
+			if (!key) {continue;}
 			if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')) {
 				ST7735_FillScreen(ST7735_RED);
 				ST7735_OutString("Invalid slot number!");
@@ -143,6 +312,7 @@ int main(void) {
 			slot = KeypadInt(key);
 			
 			if (!localStatus[keyInt]) {
+			//SLOT IS FREE, LOCKING PROCEDURE
 				localStatus[slot] = 1;
 				//WiFiPushStatus();			  // push "taken" so web users can't also claim
 				timesUp = 0;
@@ -151,12 +321,12 @@ int main(void) {
 					if (timesUp) {
 						break;
 					}
-					ST7735_FillScreen(ST7735_RED);
+					//ST7735_FillScreen(ST7735_RED);
 					ST7735_OutString("Enter your desired pin.");
 					
 					key = KeypadGet();
 					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
-						ST7735_FillScreen(ST7735_RED);
+						//ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("Invalid key! Try again.");
 						continue;
 					}
@@ -166,7 +336,7 @@ int main(void) {
 					
 					key = KeypadGet();
 					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
-						ST7735_FillScreen(ST7735_RED);
+						//ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("Invalid key! Try again.");
 						continue;
 					}
@@ -176,7 +346,7 @@ int main(void) {
 					
 					key = KeypadGet();
 					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
-						ST7735_FillScreen(ST7735_RED);
+						//ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("Invalid key! Try again.");
 						continue;
 					}
@@ -186,7 +356,7 @@ int main(void) {
 					
 					key = KeypadGet();
 					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
-						ST7735_FillScreen(ST7735_RED);
+						//ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("Invalid key! Try again.");
 						continue;
 					}
@@ -199,7 +369,7 @@ int main(void) {
 					localStatus[slot] = 0;
 					//WiFiPushStatus();
 					timesUp = 0;
-					ST7735_FillScreen(ST7735_RED);
+					//ST7735_FillScreen(ST7735_RED);
 					ST7735_OutString("Took too long! Start over.");
 					OneShot(SEC_TWO);
 					while(!timesUp) {}
@@ -210,7 +380,7 @@ int main(void) {
 					timesUp = 0;
 					
 					//WiFiPushPins();
-					ST7735_FillScreen(ST7735_RED);
+					//ST7735_FillScreen(ST7735_RED);
 					ST7735_OutString("Sweet! Go lock your bike!");
 					LocksUnlk(slot);
 					OneShot(SEC_30);
@@ -228,6 +398,114 @@ int main(void) {
 						//WiFiPushStatus();
 						//WiFiPushPins();
 						timesUp = 0;
+						LocksLock(slot);
+						//ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("Took too long! Start over.");
+						OneShot(SEC_TWO);
+						while(!timesUp) {}
+						continue;
+					} else {
+						TIMER32_INTCLR1 = 0x00000001;    // acknowledge Timer32 Timer 1 interrupt
+						TIMER32_CONTROL1 = 0x00000043;	 // disable timer, disable interrupt
+						timesUp = 0;
+						LocksLock(slot);
+						//ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("See ya later, alligator!");
+					}
+				}
+			} else {
+			//SLOT IS TAKEN, UNLOCKING PROCEDURE
+				timesUp = 0;
+				OneShot(SEC_TEN);
+				while(1) {
+					if (timesUp) {
+						break;
+					}
+					ST7735_FillScreen(ST7735_RED);
+					ST7735_OutString("Enter your pin.");
+					
+					key = KeypadGet();
+					if (!key) {continue;}
+					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
+						ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("Invalid key! Try again.");
+						continue;
+					}
+					keyPin[0] = KeypadInt(key);
+					ST7735_SetCursor(0,1);
+					ST7735_OutChar(key);
+					
+					key = KeypadGet();
+					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
+						ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("Invalid key! Try again.");
+						continue;
+					}
+					keyPin[1] = KeypadInt(key);
+					ST7735_SetCursor(0,3);
+					ST7735_OutChar(key);
+					
+					key = KeypadGet();
+					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
+						ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("Invalid key! Try again.");
+						continue;
+					}
+					keyPin[2] = KeypadInt(key);
+					ST7735_SetCursor(0,5);
+					ST7735_OutChar(key);
+					
+					key = KeypadGet();
+					if ((key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0')) {
+						ST7735_FillScreen(ST7735_RED);
+						ST7735_OutString("Invalid key! Try again.");
+						continue;
+					}
+					keyPin[3] = KeypadInt(key);
+					ST7735_SetCursor(0,7);
+					ST7735_OutChar(key);
+					
+					for (int i = 0; i <4; i++) {
+						if (keyPin[i] != localPins[slot][i]) {
+							wrongPin = 1;
+							break;
+						} else {
+							wrongPin = 0;
+						}
+					}
+				}
+				if (timesUp) {
+					timesUp = 0;
+					ST7735_FillScreen(ST7735_RED);
+					ST7735_OutString("Took too long! Start over.");
+					OneShot(SEC_TWO);
+					while(!timesUp) {}
+					continue;
+				} else if (wrongPin) {
+					TIMER32_INTCLR1 = 0x00000001;    // acknowledge Timer32 Timer 1 interrupt
+					TIMER32_CONTROL1 = 0x00000043;	 // disable timer, disable interrupt
+					timesUp = 0;
+					ST7735_FillScreen(ST7735_RED);
+					ST7735_OutString("Wrong pin entered! Start over.");
+					OneShot(SEC_TWO);
+					while(!timesUp) {}
+						continue;
+				} else {
+					TIMER32_INTCLR1 = 0x00000001;    // acknowledge Timer32 Timer 1 interrupt
+					TIMER32_CONTROL1 = 0x00000043;	 // disable timer, disable interrupt
+					timesUp = 0;
+					ST7735_FillScreen(ST7735_RED);
+					ST7735_OutString("Sweet! Go get your bike!");
+					LocksUnlk(slot);
+					OneShot(SEC_30);
+					while((ButtsYes(slot)&&DetsYes(slot))) {
+						if (timesUp) {
+							break;
+						}
+					}
+					if (timesUp) {
+						timesUp = 0;
+						LocksLock(slot);
 						ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("Took too long! Start over.");
 						OneShot(SEC_TWO);
@@ -237,16 +515,23 @@ int main(void) {
 						TIMER32_INTCLR1 = 0x00000001;    // acknowledge Timer32 Timer 1 interrupt
 						TIMER32_CONTROL1 = 0x00000043;	 // disable timer, disable interrupt
 						timesUp = 0;
-						
 						LocksLock(slot);
 						ST7735_FillScreen(ST7735_RED);
 						ST7735_OutString("See ya later, alligator!");
+						localStatus[slot] = 0;
+						localPins[slot][0] = 0;
+						localPins[slot][1] = 0;
+						localPins[slot][2] = 0;
+						localPins[slot][3] = 0;
+						//WiFiPushStatus();
+						//WiFiPushPins();
 					}
 				}
 			}
 		}
 	}
 }
+*/
 
 void mainLP(void) {
 	//Clock_Init48MHz();					// doesn't work with Keypad yet

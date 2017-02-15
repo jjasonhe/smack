@@ -70,7 +70,7 @@ void KeypadInitLP(void) {
   P4DIR &= ~0x0F;                  // make P7.3-P7.0 in (P7.3-P7.0 rows)
   P5DIR &= ~0x07;                  // make P4.3-P4.0 in (P4.3-P4.0 columns)
   // **** SysTick interrupt initialization ****
-  SysTick_Init(1200000);             // Program 5.12, 25 ms polling
+  SysTick_Init(75000);             // Program 5.12, 25 ms polling
   EndCritical(sr);
 }
 
@@ -154,7 +154,7 @@ uint8_t MatrixKeypad_Scan(int16_t *Num){
 void SysTick_Handler(void){
 	uint8_t thisKey;
 	int16_t n;
-  thisKey = MatrixKeypad_Scan(&n); // scan
+  thisKey = MatrixKeypad_ScanLP(&n); // scan
   if((thisKey != LastKey) && (n == 1)){
     MatrixFifo_Put(thisKey);
     LastKey = thisKey;
@@ -167,6 +167,10 @@ void SysTick_Handler(void){
 uint8_t KeypadGet(void){
 	uint8_t letter;
   while(MatrixFifo_Get(&letter) == FIFOFAIL){
+		if (timesUp) {
+			letter = 0;
+			break;
+		}
     WaitForInterrupt();            // there will not be any characters until at least the next interrupt
   }
   return(letter);

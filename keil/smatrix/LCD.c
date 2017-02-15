@@ -703,8 +703,8 @@ void ST7735_InitR(enum initRFlags option) {
   }
   TabColor = option;
   ST7735_SetCursor(0,0);
-  StTextColor = ST7735_YELLOW;
-  ST7735_FillScreen(0);                 // set screen to black
+  StTextColor = ST7735_WHITE;
+  ST7735_FillScreen(ST7735_RED);                 // set screen to black
 }
 
 
@@ -1464,6 +1464,30 @@ void ST7735_OutChar(char ch){
   return;
 }
 
+// *************** ST7735_OutCharSMACK ********************
+// Output one character to the LCD
+// Position determined by ST7735_SetCursor command
+// Color set by ST7735_SetTextColor
+// Inputs: 8-bit ASCII character
+// Outputs: none
+void ST7735_OutCharSMACK(char ch){
+  if((ch == 10) || (ch == 13) || (ch == 27)){
+    StY++; StX=0;
+    if(StY>15){
+      StY = 0;
+    }
+    ST7735_DrawString(0,StY,"                     ",StTextColor);
+    return;
+  }
+  ST7735_DrawCharS(StX*6,StY*10,ch,ST7735_WHITE,ST7735_RED, 1);
+  StX++;
+  if(StX>20){
+    StX = 20;
+    ST7735_DrawCharS(StX*6,StY*10,'*',ST7735_BLACK,ST7735_RED, 1);
+  }
+  return;
+}
+
 //********ST7735_OutString*****************
 // Print a string of characters to the ST7735 LCD.
 // Position determined by ST7735_SetCursor command
@@ -1471,9 +1495,9 @@ void ST7735_OutChar(char ch){
 // The string will not automatically wrap.
 // inputs: ptr  pointer to NULL-terminated ASCII string
 // outputs: none
-void ST7735_OutString(char *ptr){
+void ST7735_OutString(char *ptr){	
   while(*ptr){
-    ST7735_OutChar(*ptr);
+    ST7735_OutCharSMACK(*ptr);
     ptr = ptr + 1;
   }
 }

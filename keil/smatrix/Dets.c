@@ -30,30 +30,32 @@ void DetsInit(void) {
 }
 
 uint8_t DetsYes(uint8_t slot) {
+	uint8_t ret;
 	switch(slot) {
 		case(1) :
 			if (P5IN&0x04) {
-				return 1;
+				ret = 1;
 			} else {
-				return 0;
+				ret = 0;
 			}
 		case(2) :
 			if (P4IN&0x40) {
-				return 1;
+				ret = 1;
 			} else {
-				return 0;
+				ret = 0;
 			}
 		case(3) :
 			if (P4IN&0x08) {
-				return 1;
+				ret = 1;
 			} else {
-				return 0;
+				ret = 0;
 			}
 		case(4) :
 			if (P7IN&0x10) {
-				return 1;
+				ret = 1;
 			} else {
-				return 0;
+				ret = 0;
 			}
 	}
+	return ret;
 }
