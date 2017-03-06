@@ -15,6 +15,10 @@
 
 #include <stdint.h>
 
+void ButtsInitLP(void);
+
 void ButtsInit(void);
 
-uint8_t ButtsYes(uint8_t slot);
+uint8_t ButtsyLP(uint8_t slot);
+
+uint8_t Buttsy(uint8_t slot);

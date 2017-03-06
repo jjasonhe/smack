@@ -339,6 +339,7 @@ void ST7735_PlotNextErase(void);
 // Outputs: none
 void ST7735_OutChar(char ch);
 void ST7735_OutCharSMACK(char ch);
+void ST7735_OutCharLOGO(char ch);
 
 //********ST7735_OutString*****************
 // Print a string of characters to the ST7735 LCD.
@@ -348,6 +349,7 @@ void ST7735_OutCharSMACK(char ch);
 // inputs: ptr  pointer to NULL-terminated ASCII string
 // outputs: none
 void ST7735_OutString(char *ptr);
+void ST7735_OutStringLOGO(char *ptr);
 
 // ************** ST7735_SetTextColor ************************
 // Sets the color in which the characters will be printed

@@ -15,6 +15,10 @@
 
 #include <stdint.h>
 
+void DetsInitLP(void);
+
 void DetsInit(void);
 
-uint8_t DetsYes(uint8_t slot);
+uint8_t DetsyLP(uint8_t slot);
+
+uint8_t Detsy(uint8_t slot);

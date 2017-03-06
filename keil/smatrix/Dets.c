@@ -7,6 +7,13 @@
 */
 
 /* DETS
+	 P6.4  DET1
+	 P4.6  DET2
+	 P6.5  DET3
+	 P7.4  DET4
+*/
+
+/* DETS
 	 P5.2  DET1
 	 P4.6  DET2
 	 P4.3  DET3
@@ -16,6 +23,18 @@
 #include <stdint.h>
 #include "msp432p401r.h"
 #include "Dets.h"
+
+void DetsInitLP(void) {
+	P6SEL0 &= ~0x30;
+	P6SEL1 &= ~0x30;
+	P6DIR  &= ~0x30;
+	P4SEL0 &= ~0x40;
+	P4SEL1 &= ~0x40;
+	P4DIR	 &= ~0x40;
+	P7SEL0 &= ~0x10;
+	P7SEL1 &= ~0x10;
+	P7DIR	 &= ~0x10;
+}
 
 void DetsInit(void) {
 	P5SEL0 &= ~0x04;
@@ -29,33 +48,60 @@ void DetsInit(void) {
 	P7DIR	 &= ~0x10;
 }
 
-uint8_t DetsYes(uint8_t slot) {
-	uint8_t ret;
+uint8_t DetsyLP(uint8_t slot) {
 	switch(slot) {
 		case(1) :
-			if (P5IN&0x04) {
-				ret = 1;
+			if (P6IN&0x10) {
+				return 0;
 			} else {
-				ret = 0;
+				return 1;
 			}
 		case(2) :
 			if (P4IN&0x40) {
-				ret = 1;
+				return 0;
 			} else {
-				ret = 0;
+				return 1;
 			}
 		case(3) :
-			if (P4IN&0x08) {
-				ret = 1;
+			if (P6IN&0x20) {
+				return 0;
 			} else {
-				ret = 0;
+				return 1;
 			}
 		case(4) :
 			if (P7IN&0x10) {
-				ret = 1;
+				return 0;
 			} else {
-				ret = 0;
+				return 1;
 			}
 	}
-	return ret;
+}
+
+uint8_t Detsy(uint8_t slot) {
+	switch(slot) {
+		case(1) :
+			if (P5IN&0x04) {
+				return 0;
+			} else {
+				return 1;
+			}
+		case(2) :
+			if (P4IN&0x40) {
+				return 0;
+			} else {
+				return 1;
+			}
+		case(3) :
+			if (P4IN&0x08) {
+				return 0;
+			} else {
+				return 1;
+			}
+		case(4) :
+			if (P7IN&0x10) {
+				return 0;
+			} else {
+				return 1;
+			}
+	}
 }
