@@ -1,64 +1,295 @@
-/* smain.c
-   Runs on MSP432
-   Main file for smack on-rack interface
-   Calls peripherals in separate files
-   Jiacheng Jason He
-   February 9, 2017
-*/
+#include <stdlib.h>
+#include <string.h>
 
-/* LCD
-	 GND	 GND
-	 +3V3	 VCC
-	 P9.3	 RESET
-	 P9.2	 C/D
-	 X		 CARD_CS
-	 P9.4	 TFT_CS
-	 P9.7	 MOSI
-	 P9.5	 SCLK
-	 X		 MISO
-	 +3V3	 LIGHT
-*/
+#include "driverlib.h"
+#include "simplelink.h"
+#include "sl_common.h"
+#include "MQTTClient.h"
 
-/* KEYPAD
-	 P1.3  COL1
-	 P1.2  COL2
-	 P1.1  COL3
-	 P1.0  ROW1
-	 P10.3 ROW2
-	 P10.2 ROW3
-	 P10.1 ROW4
-*/
-
-/* LOCKS
-   P5.3  M1
-	 P4.7  M2
-	 P4.4  M3
-	 P7.5  M4
-*/
-
-/* BUTTS
-	 P5.4  S1
-	 P5.0  S2
-	 P4.5  S3
-	 P7.6  S4
-*/
-
-/* DETS
-	 P5.2  DET1
-	 P4.6  DET2
-	 P4.3  DET3
-	 P7.4  DET4
-*/
-
-#include <stdint.h>
-#include "msp432p401r.h"
+#include "Butts.h"
+#include "Dets.h"
 #include "Keypad.h"
 #include "LCD.h"
 #include "Locks.h"
-#include "Butts.h"
-#include "Dets.h"
-#include "ClockSystem.h"
 
+#define SSID_NAME       "NETGEAR92"       			 /* Access point name to connect to. */
+#define SEC_TYPE        SL_SEC_TYPE_WPA_WPA2     /* Security type of the Access piont */
+#define PASSKEY         "calmowl610"   					 /* Password in case of secure AP */
+#define PASSKEY_LEN     pal_Strlen(PASSKEY)      /* Password length in case of secure AP */
+
+#define MQTT_BROKER_SERVER  "iot.eclipse.org"
+#define SUBSCRIBE_TOPIC "toSMACK"
+#define PUBLISH_TOPIC "fromSMACK"
+
+#define BUFF_SIZE 32
+#define APPLICATION_VERSION "1.0.0"
+#define MCLK_FREQUENCY 48000000
+#define PWM_PERIOD 255
+
+#define SL_STOP_TIMEOUT     0xFF
+
+#define SMALL_BUF           32
+#define MAX_SEND_BUF_SIZE   512
+#define MAX_SEND_RCV_SIZE   1024
+
+/* Application specific status/error codes */
+typedef enum{
+    DEVICE_NOT_IN_STATION_MODE = -0x7D0,        /* Choosing this number to avoid overlap with host-driver's error codes */
+    HTTP_SEND_ERROR = DEVICE_NOT_IN_STATION_MODE - 1,
+    HTTP_RECV_ERROR = HTTP_SEND_ERROR - 1,
+    HTTP_INVALID_RESPONSE = HTTP_RECV_ERROR -1,
+    STATUS_CODE_MAX = -0xBB8
+}e_AppStatusCodes;
+
+#define min(X,Y) ((X) < (Y) ? (X) : (Y))
+
+/*
+ * GLOBAL VARIABLES -- Start
+ */
+/* Button debounce state variables */
+volatile unsigned int S1buttonDebounce = 0;
+volatile unsigned int S2buttonDebounce = 0;
+volatile int publishID = 0;
+
+unsigned char macAddressVal[SL_MAC_ADDR_LEN];
+unsigned char macAddressLen = SL_MAC_ADDR_LEN;
+
+char macStr[18];        // Formatted MAC Address String
+char uniqueID[9];       // Unique ID generated from TLV RAND NUM and MAC Address
+
+Network n;
+Client hMQTTClient;     // MQTT Client
+
+_u32  g_Status = 0;
+struct{
+    _u8 Recvbuff[MAX_SEND_RCV_SIZE];
+    _u8 SendBuff[MAX_SEND_BUF_SIZE];
+
+    _u8 HostName[SMALL_BUF];
+    _u8 CityName[SMALL_BUF];
+
+    _u32 DestinationIP;
+    _i16 SockID;
+}g_AppData;
+/*
+ * GLOBAL VARIABLES -- End
+ */
+
+/*
+ * STATIC FUNCTION DEFINITIONS -- Start
+ */
+static _i32 establishConnectionWithAP();
+static _i32 configureSimpleLinkToDefaultState();
+static _i32 initializeAppVariables();
+static void displayBanner();
+static void messageArrived(MessageData*);
+static void babyGotBack(MessageData*);
+static void generateUniqueID();
+/*
+ * STATIC FUNCTION DEFINITIONS -- End
+ */
+
+/*
+ * ASYNCHRONOUS EVENT HANDLERS -- Start
+ */
+/*!
+    \brief This function handles WLAN events
+
+    \param[in]      pWlanEvent is the event passed to the handler
+
+    \return         None
+
+    \note
+
+    \warning
+*/
+void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
+{
+    if(pWlanEvent == NULL)
+        CLI_Write(" [WLAN EVENT] NULL Pointer Error \n\r");
+    
+    switch(pWlanEvent->Event)
+    {
+        case SL_WLAN_CONNECT_EVENT:
+        {
+            SET_STATUS_BIT(g_Status, STATUS_BIT_CONNECTION);
+
+            /*
+             * Information about the connected AP (like name, MAC etc) will be
+             * available in 'slWlanConnectAsyncResponse_t' - Applications
+             * can use it if required
+             *
+             * slWlanConnectAsyncResponse_t *pEventData = NULL;
+             * pEventData = &pWlanEvent->EventData.STAandP2PModeWlanConnected;
+             *
+             */
+        }
+        break;
+
+        case SL_WLAN_DISCONNECT_EVENT:
+        {
+            slWlanConnectAsyncResponse_t*  pEventData = NULL;
+
+            CLR_STATUS_BIT(g_Status, STATUS_BIT_CONNECTION);
+            CLR_STATUS_BIT(g_Status, STATUS_BIT_IP_ACQUIRED);
+
+            pEventData = &pWlanEvent->EventData.STAandP2PModeDisconnected;
+
+            /* If the user has initiated 'Disconnect' request, 'reason_code' is SL_USER_INITIATED_DISCONNECTION */
+            if(SL_USER_INITIATED_DISCONNECTION == pEventData->reason_code)
+            {
+                CLI_Write(" Device disconnected from the AP on application's request \n\r");
+            }
+            else
+            {
+                CLI_Write(" Device disconnected from the AP on an ERROR..!! \n\r");
+            }
+        }
+        break;
+
+        default:
+        {
+            CLI_Write(" [WLAN EVENT] Unexpected event \n\r");
+        }
+        break;
+    }
+}
+
+/*!
+    \brief This function handles events for IP address acquisition via DHCP
+           indication
+
+    \param[in]      pNetAppEvent is the event passed to the handler
+
+    \return         None
+
+    \note
+
+    \warning
+*/
+void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
+{
+    if(pNetAppEvent == NULL)
+        CLI_Write(" [NETAPP EVENT] NULL Pointer Error \n\r");
+ 
+    switch(pNetAppEvent->Event)
+    {
+        case SL_NETAPP_IPV4_IPACQUIRED_EVENT:
+        {
+            SET_STATUS_BIT(g_Status, STATUS_BIT_IP_ACQUIRED);
+
+            /*
+             * Information about the connected AP's IP, gateway, DNS etc
+             * will be available in 'SlIpV4AcquiredAsync_t' - Applications
+             * can use it if required
+             *
+             * SlIpV4AcquiredAsync_t *pEventData = NULL;
+             * pEventData = &pNetAppEvent->EventData.ipAcquiredV4;
+             * <gateway_ip> = pEventData->gateway;
+             *
+             */
+        }
+        break;
+
+        default:
+        {
+            CLI_Write(" [NETAPP EVENT] Unexpected event \n\r");
+        }
+        break;
+    }
+}
+
+/*!
+    \brief This function handles callback for the HTTP server events
+
+    \param[in]      pHttpEvent - Contains the relevant event information
+    \param[in]      pHttpResponse - Should be filled by the user with the
+                    relevant response information
+
+    \return         None
+
+    \note
+
+    \warning
+*/
+void SimpleLinkHttpServerCallback(SlHttpServerEvent_t *pHttpEvent,
+                                  SlHttpServerResponse_t *pHttpResponse)
+{
+    /*
+     * This application doesn't work with HTTP server - Hence these
+     * events are not handled here
+     */
+    CLI_Write(" [HTTP EVENT] Unexpected event \n\r");
+}
+
+/*!
+    \brief This function handles general error events indication
+
+    \param[in]      pDevEvent is the event passed to the handler
+
+    \return         None
+*/
+void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent)
+{
+    /*
+     * Most of the general errors are not FATAL are are to be handled
+     * appropriately by the application
+     */
+    CLI_Write(" [GENERAL EVENT] \n\r");
+}
+
+/*!
+    \brief This function handles socket events indication
+
+    \param[in]      pSock is the event passed to the handler
+
+    \return         None
+*/
+void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
+{
+    if(pSock == NULL)
+        CLI_Write(" [SOCK EVENT] NULL Pointer Error \n\r");
+
+    switch( pSock->Event )
+    {
+        case SL_SOCKET_TX_FAILED_EVENT:
+        {
+            /*
+            * TX Failed
+            *
+            * Information about the socket descriptor and status will be
+            * available in 'SlSockEventData_t' - Applications can use it if
+            * required
+            *
+            * SlSockEventData_t *pEventData = NULL;
+            * pEventData = & pSock->EventData;
+            */
+            switch( pSock->EventData.status )
+            {
+                case SL_ECLOSE:
+                    CLI_Write(" [SOCK EVENT] Close socket operation failed to transmit all queued packets\n\r");
+                break;
+
+
+                default:
+                    CLI_Write(" [SOCK EVENT] Unexpected event \n\r");
+                break;
+            }
+        }
+        break;
+
+        default:
+            CLI_Write(" [SOCK EVENT] Unexpected event \n\r");
+        break;
+    }
+}
+/*
+ * ASYNCHRONOUS EVENT HANDLERS -- End
+ */
+
+/*
+ * Application's entry point
+ */
 void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
 long StartCritical (void);    // previous I bit, disable interrupts
@@ -66,41 +297,11 @@ void EndCritical(long sr);    // restore I bit to previous value
 void WaitForInterrupt(void);  // low power mode
 
 #define SLOTS 4
-#define RACK 1
-#define SEC_HLF  1500000			// assuming 3MHz clock? SMCLK?
-#define SEC_10  30000000			// assuming 3MHz clock? SMCLK?
-#define SEC_02   6000000			// assuming 3MHz clock? SMCLK?
-#define SEC_30  90000000			// assuming 3MHz clock? SMCLK?
-
-volatile uint8_t key;
-uint8_t localStatus[SLOTS] = {0,0,0,0};			// 0 = open, 1 = used, 2 = rsvd
-uint8_t localPins[SLOTS][4] = {
-	{0,0,0,0},
-	{0,0,0,0},
-	{0,0,0,0},
-	{0,0,0,0}
-};
-uint8_t localButts[SLOTS] = {0,0,0,0};
-uint8_t localDets[SLOTS] = {0,0,0,0};
-uint8_t slot;										// ranges from 0 to 3, NOT 1 to 4
-uint8_t pins[4];
-uint8_t pclr[4] = {0,0,0,0};
-uint8_t stat;                  // 0 = open, 1 = used, 2 = rsvd
-uint8_t timesUp;
-uint8_t butt;
-uint8_t det;
-uint8_t fill = 0;
-
-// S T R I N G S
-char str01[12] = "Hello, I am";
-char str02[18] = "Press # to begin!";
-char str03[18] = "Choose your slot:";
-char str04[16] = "Enter slot pin:";
-char str05[16] = "Slot # is open!";
-char str06[18] = "Go lock your bike";
-char str07[18] = "Go grab your bike";
-char str08[8] = "CYA L8R";
-char str09[8] = "ALLIG8R";
+#define RACK 0
+#define SEC_HLF  24000000			// assuming 3MHz clock? SMCLK?
+#define SEC_10  480000000			// assuming 3MHz clock? SMCLK?
+#define SEC_02   96000000			// assuming 3MHz clock? SMCLK?
+#define SEC_30 1440000000			// assuming 3MHz clock? SMCLK?
 
 const unsigned short allig8r[] = {
  0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622, 0x0622,
@@ -578,69 +779,242 @@ const unsigned short allig8r[] = {
  0x0000, 0x0000, 0x0000, 0x0000, 0xF81F, 0xF81F, 0x0000, 0x0000
 };
 
-void OneShot(uint32_t period){long sr;
-  sr = StartCritical();
-  TIMER32_LOAD1 = period-1;    // timer reload value
-  TIMER32_INTCLR1 = 0x00000001;    // clear Timer32 Timer 1 interrupt
-  // bits31-8=X...X,   reserved
-  // bit7=1,           timer enable
-  // bit6=1,           timer in periodic mode
-  // bit5=1,           interrupt enable
-  // bit4=X,           reserved
-  // bits3-2=??,       input clock divider according to parameter
-  // bit1=1,           32-bit counter
-  // bit0=0,           one-shot mode
-  TIMER32_CONTROL1 = 0x000000E3;
-// interrupts enabled in the main program after all devices initialized
-  NVIC_IPR6 = (NVIC_IPR6&0xFFFF00FF)|0x00004000; // priority 2
-  NVIC_ISER0 = 0x02000000;         // enable interrupt 25 in NVIC
-  EndCritical(sr);
+volatile uint8_t key;
+uint8_t localStatus[SLOTS] = {0,0,0,0};			// 0 = open, 1 = used, 2 = rsvd
+uint8_t localPins[SLOTS][4] = {
+	{0,0,0,0},
+	{0,0,0,0},
+	{0,0,0,0},
+	{0,0,0,0}
+};
+uint8_t localButts[SLOTS] = {0,0,0,0};
+uint8_t localDets[SLOTS] = {0,0,0,0};
+uint8_t slot;										// ranges from 0 to 3, NOT 1 to 4
+uint8_t pins[4];
+uint8_t pclr[4] = {0,0,0,0};
+uint8_t stat;                  // 0 = open, 1 = used, 2 = rsvd
+uint8_t timesUp;
+uint8_t butt;
+uint8_t det;
+uint8_t fill = 0;
+uint8_t wifiFlag;								// 1 = fetchs, 2 = fetchp, 3 = pushs, 4 = pushp
+uint8_t wifiClBk = 0;								// callback flag--code cannot proceed till database has returned results
+
+// S T R I N G S
+char str01[12] = "Hello, I am";
+char str02[18] = "Press # to begin!";
+char str03[18] = "Choose your slot:";
+char str04[16] = "Enter slot pin:";
+char str05[16] = "Slot # is open!";
+char str06[18] = "Go lock your bike";
+char str07[18] = "Go grab your bike";
+char str08[8] = "CYA L8R";
+char str09[8] = "ALLIG8R";
+
+void OneShot(uint32_t period) {long sr;
+	sr = StartCritical();
+	// Timer32 set up in one-shot, free run, 32-bit, no pre-scale
+  TIMER32_1->CONTROL = TIMER32_CONTROL_SIZE | TIMER32_CONTROL_ONESHOT | TIMER32_CONTROL_IE | TIMER32_CONTROL_MODE | TIMER32_CONTROL_ENABLE;
+	TIMER32_1->LOAD = period-1;
+	__enable_irq();
+	NVIC->ISER[0] = 1 << ((T32_INT1_IRQn) & 31);
+	EndCritical(sr);
 }
 
-void T32_INT1_IRQHandler(void){
-  TIMER32_INTCLR1 = 0x00000001;    // acknowledge Timer32 Timer 1 interrupt
+void T32_INT1_IRQHandler(void) {
+	TIMER32_1->INTCLR |= BIT0;              // Clear Timer32 interrupt flag
 	timesUp = 1;
+	TIMER32_1->CONTROL &= ~(TIMER32_CONTROL_ENABLE |
+            TIMER32_CONTROL_IE);
 }
 
-int main1(void) {
-	LocksInit();
-	ButtsInitLP();
-	DetsInitLP();
+void WiFiFetchStatus(uint8_t r) {
+	wifiFlag = 1;
+	char stat[32] = "SELECT * FROM racks WHERE id = X";
+	stat[31] = 0x30+r;
+	int rc = 0;
+	MQTTMessage msg;
+	msg.dup = 0;
+  msg.id = 0;
+  msg.payload = stat;
+  msg.payloadlen = 32;
+  msg.qos = QOS0;
+  msg.retained = 0;
+	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+	if (rc != 0) {
+    LOOP_FOREVER();
+  }
+}
+	
+void WiFiFetchPins(uint8_t r) {
+	wifiFlag = 2;
+	char spin[31] = "SELECT * FROM pins WHERE id = X";
+	spin[30] = 0x30+r;
+	int rc = 0;
+	MQTTMessage msg;
+	msg.dup = 0;
+  msg.id = 0;
+  msg.payload = spin;
+  msg.payloadlen = 31;
+  msg.qos = QOS0;
+  msg.retained = 0;
+	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+	if (rc != 0) {
+    LOOP_FOREVER();
+  }
+}
+
+void WiFiPushStatus(uint8_t r, uint8_t s, uint8_t status) {
+	wifiFlag = 3;
+	char sopen[44] = "UPDATE racks SET slotX = 'open' WHERE id = Y";
+	char sused[44] = "UPDATE racks SET slotX = 'used' WHERE id = Y";
+	sopen[21] = 0x30+s;
+	sused[21] = 0x30+s;
+	sopen[43] = 0x30+r;
+	sused[43] = 0x30+r;
+	int rc = 0;
+	MQTTMessage msg;
+	msg.dup = 0;
+	msg.id = 0;
+	if (status == 0) {
+		msg.payload = sopen;
+	} else {
+		msg.payload = sused;
+	}
+	msg.payloadlen = 44;
+	msg.qos = QOS0;
+	msg.retained = 0;
+	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+	if (rc != 0) {
+		LOOP_FOREVER();
+	}
+}
+
+void WiFiPushPins(uint8_t r, uint8_t s, uint8_t* pin) {
+	wifiFlag = 4;
+	char spin[43] = "UPDATE pins SET slotX = 'ABCD' WHERE id = Y";
+	spin[20] = 0x30+s;
+	spin[42] = 0x30+r;
+	spin[25] = pin[0];
+	spin[26] = pin[1];
+	spin[27] = pin[2];
+	spin[28] = pin[3];
+	int rc = 0;
+	MQTTMessage msg;
+	msg.dup = 0;
+	msg.id = 0;
+	msg.payload = spin;
+	msg.payloadlen = 43;
+	msg.qos = QOS0;
+	msg.retained = 0;
+	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+	if (rc != 0) {
+		LOOP_FOREVER();
+	}
+}
+
+int main(int argc, char** argv)
+{
+	_i32 retVal = -1;
+	
+  retVal = initializeAppVariables();
+  ASSERT_ON_ERROR(retVal);
+	
+	/* Stop WDT and initialize the system-clock of the MCU */
+  stopWDT();
+  initClk();
+
+  retVal = configureSimpleLinkToDefaultState();
+  if (retVal < 0) {
+		if (DEVICE_NOT_IN_STATION_MODE == retVal)
+			LOOP_FOREVER();
+	}
+	
+  retVal = sl_Start(0, 0, 0);
+  if ((retVal < 0) || (ROLE_STA != retVal)) {
+		LOOP_FOREVER();
+	}
+	
+  /* Connecting to WLAN AP */
+  retVal = establishConnectionWithAP();
+  if (retVal < 0) {
+		LOOP_FOREVER();
+	}
+	
+  // Obtain MAC Address
+  sl_NetCfgGet(SL_MAC_ADDRESS_GET,NULL,&macAddressLen,(unsigned char *)macAddressVal);
+	
+  // Print MAC Addres to be formatted string
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+          macAddressVal[0], macAddressVal[1], macAddressVal[2], macAddressVal[3], macAddressVal[4], macAddressVal[5]);
+	
+  // Generate 32bit unique ID from TLV Random Number and MAC Address
+  generateUniqueID();
+	
+  int rc = 0;
+  unsigned char buf[100];
+  unsigned char readbuf[100];
+
+  NewNetwork(&n);
+  rc = ConnectNetwork(&n, MQTT_BROKER_SERVER, 1883);
+
+  if (rc != 0) {
+		LOOP_FOREVER();
+  }
+
+  MQTTClient(&hMQTTClient, &n, 1000, buf, 100, readbuf, 100);
+  MQTTPacket_connectData cdata = MQTTPacket_connectData_initializer;
+  cdata.MQTTVersion = 3;
+  cdata.clientID.cstring = uniqueID;
+  rc = MQTTConnect(&hMQTTClient, &cdata);
+	if (rc != 0) {
+		LOOP_FOREVER();
+  }
+	
+  rc = MQTTSubscribe(&hMQTTClient, SUBSCRIBE_TOPIC, QOS0, babyGotBack);
+  if (rc != 0) {
+		LOOP_FOREVER();
+  }
+	
 	ST7735_InitR(INITR_REDTAB);
-	KeypadInitLP();
-	LocksUnlk(1);
-}
-
-int main(void) {
-  LocksInit();
+	LocksInit();
   ButtsInitLP();
   DetsInitLP();
-  ST7735_InitR(INITR_REDTAB);
-  KeypadInitLP();
-  //WiFiInit();
+	KeypadInitLP();
 	
-  while(1) {
+	while(1) {
 		if (fill) {
 			ST7735_FillScreen(ST7735_BLACK);
 			fill = 0;
 		}
 		timesUp = 0;
 		
-    //localStatus = WiFiFetchStatus();
-    //localPins = WiFiFetchPins();
-		
+		// UPDATING LOCAL STATUS AND PINS
+		WiFiFetchStatus(RACK);
+		while(!wifiClBk) {
+			rc = MQTTYield(&hMQTTClient, 10);
+			Delay(10);
+		}
+		wifiClBk = 0;
+		WiFiFetchPins(RACK);
+		while(!wifiClBk) {
+			rc = MQTTYield(&hMQTTClient, 10);
+			Delay(10);
+		}
+		wifiClBk = 0;
+		/*
 		for (uint8_t i = 0; i < SLOTS; i++) {
 			butt = ButtsyLP(i+1);
-			//det = DetsyLP(i+1);
+			det = DetsyLP(i+1);
 			if (butt != localStatus[i]) {
 				localStatus[i] = butt;
-				//WiFiPushStatus(RACK, i, butt);
-			//} else if (det != localStatus[i]) {
-				//localStatus[i] = det;
-				//WiFiPushStatus(RACK, i, det);
+				WiFiPushStatus(RACK, i, butt);
+			} else if (det != localStatus[i]) {
+				localStatus[i] = det;
+				WiFiPushStatus(RACK, i, det);
 			}
 		}
-		
+		*/
 		ST7735_SetCursor(5,5);
 		ST7735_OutString(str01);
 		ST7735_DrawCharS(7,64,'s',ST7735_WHITE,ST7735_BLACK,4);
@@ -650,11 +1024,6 @@ int main(void) {
 		ST7735_DrawCharS(103,64,'k',ST7735_WHITE,ST7735_BLACK,4);
 		ST7735_SetCursor(2,12);
 		ST7735_OutString(str02);
-		
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
 		OneShot(SEC_HLF);
 		
@@ -674,8 +1043,10 @@ int main(void) {
 		ST7735_OutString(str03);
 		
 		for (uint8_t i = 0; i < SLOTS; i++) {
-			if (localStatus[i]) {
+			if (localStatus[i] == 1) {
 				ST7735_DrawCharS((22+i*22),74,(0x31+i),ST7735_RED,ST7735_BLACK,3);
+			} else if (localStatus[i] == 2) {
+				ST7735_DrawCharS((22+i*22),74,(0x31+i),ST7735_YELLOW,ST7735_BLACK,3);
 			} else {
 				ST7735_DrawCharS((22+i*22),74,(0x31+i),ST7735_GREEN,ST7735_BLACK,3);
 			}
@@ -684,7 +1055,7 @@ int main(void) {
 		timesUp = 0;
 		OneShot(SEC_10);
 		
-    do {
+		do {
       key = KeypadGet();
       if ((key=='5')||(key=='6')||(key=='7')||(key=='8')||(key=='9')||(key=='0')||(key=='*')||(key=='#')) {
         //ST7735_SetCursor(0,1);
@@ -705,23 +1076,30 @@ int main(void) {
 		str05[5] = key;
 	  slot = KeypadInt(key) - 1;
 		
-		//localStatus = WiFiFetchStatus();
-		//localPins = WiFiFetchPins();
-    if (!(localStatus[slot])) {
+		while(1) {}
+		
+		WiFiFetchStatus(RACK);
+		while(!wifiClBk) {
+			rc = MQTTYield(&hMQTTClient, 10);
+			Delay(10);
+		}
+		wifiClBk = 0;
+		WiFiFetchPins(RACK);
+		while(!wifiClBk) {
+			rc = MQTTYield(&hMQTTClient, 10);
+			Delay(10);
+		}
+		wifiClBk = 0;
+    if (localStatus[slot] == 0) {
 			stat = 0;
-		} else {
+		} else if (localStatus[slot] == 1) {
 			stat = 1;
+		} else if (localStatus[slot] == 2) {
+			stat = 2;
 		}
 		
-		if (!stat) {
-      //WiFiPushStatus(RACK, slot, 1);
-			//DEBUG
-			//ST7735_SetCursor(0,15);
-			//ST7735_OutString("!stat");
-    } else {
-			//DEBUG
-			//ST7735_SetCursor(0,15);
-			//ST7735_OutString("stat!");
+		if (stat == 0) {
+			WiFiPushStatus(RACK, slot, 1);
 		}
 		
 		ST7735_FillScreen(ST7735_BLACK);
@@ -733,85 +1111,52 @@ int main(void) {
 		
 		do {
 			key = KeypadGet();
-			if ((key=='*')||(key=='#')) {
-        //ST7735_SetCursor(0,3);
-        //ST7735_OutString("invalid key");
-			}
 		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
 		if (timesUp) {
 			timesUp = 0;
-			//ST7735_SetCursor(0,13);
-			//ST7735_OutString("TIMES UP");
 			continue;
 		}
-		//ST7735_SetCursor(0,3);
-		//ST7735_OutString("*          ");
 		ST7735_DrawCharS((22+0*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
 		pins[0] = KeypadInt(key);
 		
 		do {
 			key = KeypadGet();
-			if ((key=='*')||(key=='#')) {
-        //ST7735_SetCursor(0,3);
-        //ST7735_OutString("invalid key");
-			}
 		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
 		if (timesUp) {
 			timesUp = 0;
-			//ST7735_SetCursor(0,13);
-			//ST7735_OutString("TIMES UP");
 			continue;
 		}
-		//ST7735_SetCursor(0,3);
-		//ST7735_OutString("* *        ");
 		ST7735_DrawCharS((22+1*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
 		pins[1] = KeypadInt(key);
 		
 		do {
 			key = KeypadGet();
-			if ((key=='*')||(key=='#')) {
-        //ST7735_SetCursor(0,3);
-        //ST7735_OutString("invalid key");
-			}
 		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
 		if (timesUp) {
 			timesUp = 0;
-			//ST7735_SetCursor(0,13);
-			//ST7735_OutString("TIMES UP");
 			continue;
 		}
-		//ST7735_SetCursor(0,3);
-		//ST7735_OutString("* * *      ");
 		ST7735_DrawCharS((22+2*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
 		pins[2] = KeypadInt(key);
 		
 		do {
 			key = KeypadGet();
-			if ((key=='*')||(key=='#')) {
-        //ST7735_SetCursor(0,3);
-        //ST7735_OutString("invalid key");
-			}
 		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
 		if (timesUp) {
 			timesUp = 0;
-			//ST7735_SetCursor(0,13);
-			//ST7735_OutString("TIMES UP");
 			continue;
 		}
-		//ST7735_SetCursor(0,3);
-		//ST7735_OutString("* * * *    ");
 		ST7735_DrawCharS((22+3*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
 		pins[3] = KeypadInt(key);
 		
-		if (!stat) {
+		if (stat == 0) {
 			localPins[slot][0] = pins[0];
 			localPins[slot][1] = pins[1];
 			localPins[slot][2] = pins[2];
 			localPins[slot][3] = pins[3];
-			//WiFiPushPins(RACK, slot, pins);
+			WiFiPushPins(RACK, slot, pins);
 		}
 		
-		//if (localPins[slot] != pins) {
 		if ((localPins[slot][0] != pins[0])||(localPins[slot][1] != pins[1])||(localPins[slot][2] != pins[2])||(localPins[slot][3] != pins[3])) {
 			//ST7735_OutString("Invalid pin!");
 			ST7735_DrawCharS((22+0*22),74,'*',ST7735_RED,ST7735_BLACK,3);
@@ -830,44 +1175,35 @@ int main(void) {
     ST7735_SetCursor(3,5);
 		ST7735_OutString(str05);
 		
-		if (!stat) {
+		if (stat == 0 || stat == 2) {
 			ST7735_SetCursor(2,7);
 			ST7735_OutString(str06);
-		} else {
+		} else if (stat == 1) {
 			ST7735_SetCursor(2,7);
 			ST7735_OutString(str07);
 		}
 		
-		//P5OUT |= 0x08;
-		//return 1;
-		
-		//LocksUnlk(slot+1);
+		LocksUnlk(slot+1);
 		timesUp = 0;
 		OneShot(SEC_30);
 		while(!timesUp) {
-			//if (Buttsy(slot+1) && Detsy(slot+1)) {
-			if (ButtsyLP(slot+1)) {
-				//LocksLock(slot+1);
-				//DEBUG
-				ST7735_SetCursor(0,10);
-				ST7735_OutString("lockedWOO");
+			if (Buttsy(slot+1) && Detsy(slot+1)) {
+				LocksLock(slot+1);
 				break;
 			}
 		}
 		if (timesUp) {
-			//LocksLock(slot+1);
+			LocksLock(slot+1);
 			timesUp = 0;
-			//ST7735_SetCursor(0,12);
-			//ST7735_OutString("lockTIMESup");
-			if (!stat) {
-				//WiFiPushStatus(RACK, slot, 0);
-				//WiFiPushPins(RACK, slot, pclr);
+			if (stat == 0 || stat == 2) {
+				WiFiPushStatus(RACK, slot, 0);
+				WiFiPushPins(RACK, slot, pclr);
 			}
 			continue;
 		}
-		if (stat) {
-			//WiFiPushStatus(RACK, slot, 0);
-			//WiFiPushPins(RACK, slot, pclr);
+		if (stat == 1) {
+			WiFiPushStatus(RACK, slot, 0);
+			WiFiPushPins(RACK, slot, pclr);
 		}
 		
 		ST7735_FillScreen(ST7735_BLACK);
@@ -890,5 +1226,291 @@ int main(void) {
 		timesUp = 0;
 		OneShot(SEC_02);
 		while(!timesUp) {}
-  }
+		
+		while(1) {}
+	}
 }
+
+static void generateUniqueID() {
+    CRC32_setSeed(TLV->RANDOM_NUM_1, CRC32_MODE);
+    CRC32_set32BitData(TLV->RANDOM_NUM_2);
+    CRC32_set32BitData(TLV->RANDOM_NUM_3);
+    CRC32_set32BitData(TLV->RANDOM_NUM_4);
+    int i;
+    for (i = 0; i < 6; i++)
+    CRC32_set8BitData(macAddressVal[i], CRC32_MODE);
+
+    uint32_t crcResult = CRC32_getResult(CRC32_MODE);
+    sprintf(uniqueID, "%06X", crcResult);
+}
+
+//****************************************************************************
+//
+//!    \brief MQTT message received callback - Called when a subscribed topic
+//!                                            receives a message.
+//! \param[in]                  data is the data passed to the callback
+//!
+//! \return                        None
+//
+//****************************************************************************
+static void messageArrived(MessageData* data) {
+    char buf[BUFF_SIZE];
+
+    char *tok;
+    long color;
+
+    // Check for buffer overflow
+    if (data->topicName->lenstring.len >= BUFF_SIZE) {
+//      UART_PRINT("Topic name too long!\n\r");
+        return;
+    }
+    if (data->message->payloadlen >= BUFF_SIZE) {
+//      UART_PRINT("Payload too long!\n\r");
+        return;
+    }
+
+    strncpy(buf, data->topicName->lenstring.data,
+        min(BUFF_SIZE, data->topicName->lenstring.len));
+    buf[data->topicName->lenstring.len] = 0;
+
+
+
+    strncpy(buf, data->message->payload,
+        min(BUFF_SIZE, data->message->payloadlen));
+    buf[data->message->payloadlen] = 0;
+
+    return;
+}
+
+static void babyGotBack(MessageData* data) {
+	wifiClBk = 1;
+	
+	if (wifiFlag == 3 || wifiFlag == 4) {
+		return;
+	}
+	
+	// WiFiPushStatus response
+	if (wifiFlag == 1) {
+		char* pt = data->message->payload;
+		int j = 0;
+		
+		for (int i = 0; i < SLOTS; i++) {
+			while(1) {
+				if ((pt[j-4] == 's')&&(pt[j-3] == 'l')&&(pt[j-2] == 'o')&&(pt[j-1] == 't')) {
+					break;
+				} else {
+					j += 1;
+				}
+			}
+			if (pt[j+4] == 'o') {
+				localStatus[i] = 0;
+			} else if (pt[j+4] == 'u') {
+				localStatus[i] = 1;
+			} else if (pt[j+4] == 'r') {
+				localStatus[i] = 2;
+			}
+		}
+	}
+	
+	// WiFiPushPins response
+	if (wifiFlag == 2) {
+		char* pt = data->message->payload;
+		int j = 0;
+		
+		for (int i = 0; i < SLOTS; i++) {
+			while(1) {
+				if ((pt[j-4] == 's')&&(pt[j-3] == 'l')&&(pt[j-2] == 'o')&&(pt[j-1] == 't')) {
+					break;
+				} else {
+					j += 1;
+				}
+			}
+			localPins[i][0] = pt[j+4];
+			localPins[i][1] = pt[j+5];
+			localPins[i][2] = pt[j+6];
+			localPins[i][3] = pt[j+7];
+			j += 1;
+		}
+	}
+	
+	return;
+}
+
+/*!
+    \brief This function configure the SimpleLink device in its default state. It:
+           - Sets the mode to STATION
+           - Configures connection policy to Auto and AutoSmartConfig
+           - Deletes all the stored profiles
+           - Enables DHCP
+           - Disables Scan policy
+           - Sets Tx power to maximum
+           - Sets power policy to normal
+           - Unregisters mDNS services
+           - Remove all filters
+
+    \param[in]      none
+
+    \return         On success, zero is returned. On error, negative is returned
+*/
+static _i32 configureSimpleLinkToDefaultState()
+{
+    SlVersionFull   ver = {0};
+    _WlanRxFilterOperationCommandBuff_t  RxFilterIdMask = {0};
+
+    _u8           val = 1;
+    _u8           configOpt = 0;
+    _u8           configLen = 0;
+    _u8           power = 0;
+
+    _i32          retVal = -1;
+    _i32          mode = -1;
+
+    mode = sl_Start(0, 0, 0);
+    ASSERT_ON_ERROR(mode);
+
+    /* If the device is not in station-mode, try configuring it in station-mode */
+    if (ROLE_STA != mode)
+    {
+        if (ROLE_AP == mode)
+        {
+            /* If the device is in AP mode, we need to wait for this event before doing anything */
+            while(!IS_IP_ACQUIRED(g_Status)) { _SlNonOsMainLoopTask(); }
+        }
+
+        /* Switch to STA role and restart */
+        retVal = sl_WlanSetMode(ROLE_STA);
+        ASSERT_ON_ERROR(retVal);
+
+        retVal = sl_Stop(SL_STOP_TIMEOUT);
+        ASSERT_ON_ERROR(retVal);
+
+        retVal = sl_Start(0, 0, 0);
+        ASSERT_ON_ERROR(retVal);
+
+        /* Check if the device is in station again */
+        if (ROLE_STA != retVal)
+        {
+            /* We don't want to proceed if the device is not coming up in station-mode */
+            ASSERT_ON_ERROR(DEVICE_NOT_IN_STATION_MODE);
+        }
+    }
+
+    /* Get the device's version-information */
+    configOpt = SL_DEVICE_GENERAL_VERSION;
+    configLen = sizeof(ver);
+    retVal = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION, &configOpt, &configLen, (_u8 *)(&ver));
+    ASSERT_ON_ERROR(retVal);
+
+    /* Set connection policy to Auto + SmartConfig (Device's default connection policy) */
+    retVal = sl_WlanPolicySet(SL_POLICY_CONNECTION, SL_CONNECTION_POLICY(1, 0, 0, 0, 1), NULL, 0);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Remove all profiles */
+    retVal = sl_WlanProfileDel(0xFF);
+    ASSERT_ON_ERROR(retVal);
+
+    /*
+     * Device in station-mode. Disconnect previous connection if any
+     * The function returns 0 if 'Disconnected done', negative number if already disconnected
+     * Wait for 'disconnection' event if 0 is returned, Ignore other return-codes
+     */
+    retVal = sl_WlanDisconnect();
+    if(0 == retVal)
+    {
+        /* Wait */
+        while(IS_CONNECTED(g_Status)) { _SlNonOsMainLoopTask(); }
+    }
+
+    /* Enable DHCP client*/
+    retVal = sl_NetCfgSet(SL_IPV4_STA_P2P_CL_DHCP_ENABLE,1,1,&val);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Disable scan */
+    configOpt = SL_SCAN_POLICY(0);
+    retVal = sl_WlanPolicySet(SL_POLICY_SCAN , configOpt, NULL, 0);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Set Tx power level for station mode
+       Number between 0-15, as dB offset from max power - 0 will set maximum power */
+    power = 0;
+    retVal = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, WLAN_GENERAL_PARAM_OPT_STA_TX_POWER, 1, (_u8 *)&power);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Set PM policy to normal */
+    retVal = sl_WlanPolicySet(SL_POLICY_PM , SL_NORMAL_POLICY, NULL, 0);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Unregister mDNS services */
+    retVal = sl_NetAppMDNSUnRegisterService(0, 0);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Remove  all 64 filters (8*8) */
+    pal_Memset(RxFilterIdMask.FilterIdMask, 0xFF, 8);
+    retVal = sl_WlanRxFilterSet(SL_REMOVE_RX_FILTER, (_u8 *)&RxFilterIdMask,
+                       sizeof(_WlanRxFilterOperationCommandBuff_t));
+    ASSERT_ON_ERROR(retVal);
+
+    retVal = sl_Stop(SL_STOP_TIMEOUT);
+    ASSERT_ON_ERROR(retVal);
+
+    retVal = initializeAppVariables();
+    ASSERT_ON_ERROR(retVal);
+
+    return retVal; /* Success */
+}
+
+/*!
+    \brief Connecting to a WLAN Access point
+
+    This function connects to the required AP (SSID_NAME).
+    The function will return once we are connected and have acquired IP address
+
+    \param[in]  None
+
+    \return     0 on success, negative error-code on error
+
+    \note
+
+    \warning    If the WLAN connection fails or we don't acquire an IP address,
+                We will be stuck in this function forever.
+*/
+static _i32 establishConnectionWithAP()
+{
+    SlSecParams_t secParams = {0};
+    _i32 retVal = 0;
+
+    secParams.Key = PASSKEY;
+    secParams.KeyLen = PASSKEY_LEN;
+    secParams.Type = SEC_TYPE;
+
+    retVal = sl_WlanConnect(SSID_NAME, pal_Strlen(SSID_NAME), 0, &secParams, 0);
+    ASSERT_ON_ERROR(retVal);
+
+    /* Wait */
+    while((!IS_CONNECTED(g_Status)) || (!IS_IP_ACQUIRED(g_Status))) { _SlNonOsMainLoopTask(); }
+
+    return SUCCESS;
+}
+
+/*!
+    \brief This function initializes the application variables
+
+    \param[in]  None
+
+    \return     0 on success, negative error-code on error
+*/
+static _i32 initializeAppVariables()
+{
+    g_Status = 0;
+    pal_Memset(&g_AppData, 0, sizeof(g_AppData));
+
+    return SUCCESS;
+}
+
+/*!
+    \brief This function displays the application's banner
+
+    \param      None
+
+    \return     None
+*/

@@ -1,0 +1,75 @@
+Dependencies for Project 'MatrixKeypadPeriodic', Target 'Target 1': (DO NOT MODIFY !)
+F (.\smain.c)(0x58D3EB52)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\smain.o --omf_browse .\objects\smain.crf --depend .\objects\smain.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (Keypad.h)(0x58A4D657)
+I (LCD.h)(0x58B7CEEC)
+I (Locks.h)(0x58A165E1)
+I (Butts.h)(0x58B91B04)
+I (Dets.h)(0x58B91BC2)
+I (ClockSystem.h)(0x5593217C)
+F (.\LCD.c)(0x58B7D27F)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\lcd.o --omf_browse .\objects\lcd.crf --depend .\objects\lcd.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (LCD.h)(0x58B7CEEC)
+F (.\Keypad.c)(0x58D74181)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\keypad.o --omf_browse .\objects\keypad.crf --depend .\objects\keypad.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (Keypad.h)(0x58A4D657)
+I (FIFO.h)(0x56173728)
+F (.\Locks.c)(0x58B904D3)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\locks.o --omf_browse .\objects\locks.crf --depend .\objects\locks.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (Locks.h)(0x58A165E1)
+F (.\Butts.c)(0x58B920B7)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\butts.o --omf_browse .\objects\butts.crf --depend .\objects\butts.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (Butts.h)(0x58B91B04)
+F (.\Dets.c)(0x58B91B9A)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\dets.o --omf_browse .\objects\dets.crf --depend .\objects\dets.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (Dets.h)(0x58B91BC2)
+F (.\ClockSystem.c)(0x589D7999)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\clocksystem.o --omf_browse .\objects\clocksystem.crf --depend .\objects\clocksystem.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (ClockSystem.h)(0x5593217C)
+I (msp432p401r.h)(0x54EE2CB6)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+F (RTE\Device\MSP432P401R\startup_msp432p401r_uvision.s)(0x589C1636)(--cpu Cortex-M4 -g --apcs=interwork -IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include--pd "__UVISION_VERSION SETA 522" --pd "_RTE_ SETA 1" --pd "__MSP432P401R__ SETA 1"--list .\listings\startup_msp432p401r_uvision.lst --xref -o .\objects\startup_msp432p401r_uvision.o --depend .\objects\startup_msp432p401r_uvision.d)
+F (RTE\Device\MSP432P401R\system_msp432p401r.c)(0x57B71E7E)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\system_msp432p401r.o --omf_browse .\objects\system_msp432p401r.crf --depend .\objects\system_msp432p401r.d)
+I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp.h)(0x57A10826)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp432p401r.h)(0x57B71E7E)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp432p401r_classic.h)(0x57B71E7E)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
+I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\system_msp432p401r.h)(0x57A10828)

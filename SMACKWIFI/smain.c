@@ -73,7 +73,7 @@ void WaitForInterrupt(void);  // low power mode
 #define SEC_30  90000000			// assuming 3MHz clock? SMCLK?
 
 volatile uint8_t key;
-uint8_t localStatus[SLOTS] = {0,0,0,0};			// 0 = open, 1 = used, 2 = rsvd
+uint8_t localStatus[SLOTS] = {0,0,0,0};			// 0 = free, 1 = taken
 uint8_t localPins[SLOTS][4] = {
 	{0,0,0,0},
 	{0,0,0,0},
@@ -85,7 +85,7 @@ uint8_t localDets[SLOTS] = {0,0,0,0};
 uint8_t slot;										// ranges from 0 to 3, NOT 1 to 4
 uint8_t pins[4];
 uint8_t pclr[4] = {0,0,0,0};
-uint8_t stat;                  // 0 = open, 1 = used, 2 = rsvd
+uint8_t taken;                  // 0 = free, 1 = taken
 uint8_t timesUp;
 uint8_t butt;
 uint8_t det;
@@ -651,11 +651,6 @@ int main(void) {
 		ST7735_SetCursor(2,12);
 		ST7735_OutString(str02);
 		
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
 		OneShot(SEC_HLF);
 		
 		do {
@@ -708,20 +703,20 @@ int main(void) {
 		//localStatus = WiFiFetchStatus();
 		//localPins = WiFiFetchPins();
     if (!(localStatus[slot])) {
-			stat = 0;
+			taken = 0;
 		} else {
-			stat = 1;
+			taken = 1;
 		}
 		
-		if (!stat) {
+		if (!taken) {
       //WiFiPushStatus(RACK, slot, 1);
 			//DEBUG
 			//ST7735_SetCursor(0,15);
-			//ST7735_OutString("!stat");
+			//ST7735_OutString("!taken");
     } else {
 			//DEBUG
 			//ST7735_SetCursor(0,15);
-			//ST7735_OutString("stat!");
+			//ST7735_OutString("taken!");
 		}
 		
 		ST7735_FillScreen(ST7735_BLACK);
@@ -803,7 +798,7 @@ int main(void) {
 		ST7735_DrawCharS((22+3*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
 		pins[3] = KeypadInt(key);
 		
-		if (!stat) {
+		if (!taken) {
 			localPins[slot][0] = pins[0];
 			localPins[slot][1] = pins[1];
 			localPins[slot][2] = pins[2];
@@ -830,7 +825,7 @@ int main(void) {
     ST7735_SetCursor(3,5);
 		ST7735_OutString(str05);
 		
-		if (!stat) {
+		if (!taken) {
 			ST7735_SetCursor(2,7);
 			ST7735_OutString(str06);
 		} else {
@@ -859,13 +854,13 @@ int main(void) {
 			timesUp = 0;
 			//ST7735_SetCursor(0,12);
 			//ST7735_OutString("lockTIMESup");
-			if (!stat) {
+			if (!taken) {
 				//WiFiPushStatus(RACK, slot, 0);
 				//WiFiPushPins(RACK, slot, pclr);
 			}
 			continue;
 		}
-		if (stat) {
+		if (taken) {
 			//WiFiPushStatus(RACK, slot, 0);
 			//WiFiPushPins(RACK, slot, pclr);
 		}
