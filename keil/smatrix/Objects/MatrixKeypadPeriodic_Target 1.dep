@@ -1,5 +1,5 @@
 Dependencies for Project 'MatrixKeypadPeriodic', Target 'Target 1': (DO NOT MODIFY !)
-F (.\smain.c)(0x58D3EB52)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\smain.o --omf_browse .\objects\smain.crf --depend .\objects\smain.d)
+F (.\smain.c)(0x58E2A66C)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\smain.o --omf_browse .\objects\smain.crf --depend .\objects\smain.d)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
 I (msp432p401r.h)(0x54EE2CB6)
 I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)
@@ -21,7 +21,7 @@ I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\core_cm4.h)(0x589B44CC)
 I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_compiler.h)(0x589B44CC)
 I (C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include\cmsis_armcc.h)(0x589B44CC)
 I (LCD.h)(0x58B7CEEC)
-F (.\Keypad.c)(0x58D74181)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\keypad.o --omf_browse .\objects\keypad.crf --depend .\objects\keypad.d)
+F (.\Keypad.c)(0x58E2A6A0)(--c99 -c --cpu Cortex-M4 -g -O0 --apcs=interwork --split_sections --signed_chars-IC:\Users\Jason\Documents\GitHub\smack\keil\smatrix\RTE\_Target_1-IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include-D__UVISION_VERSION="522" -D_RTE_ -D__MSP432P401R__-o .\objects\keypad.o --omf_browse .\objects\keypad.crf --depend .\objects\keypad.d)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F6CB98)
 I (msp432p401r.h)(0x54EE2CB6)
 I (C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include\msp_compatibility.h)(0x5798E794)

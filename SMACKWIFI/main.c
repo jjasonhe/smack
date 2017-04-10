@@ -798,7 +798,8 @@ uint8_t butt;
 uint8_t det;
 uint8_t fill = 0;
 uint8_t wifiFlag;								// 1 = fetchs, 2 = fetchp, 3 = pushs, 4 = pushp
-uint8_t wifiClBk = 0;								// callback flag--code cannot proceed till database has returned results
+uint8_t wifiClBk = 0;						// callback flag--code cannot proceed till database has returned results
+uint8_t disconnect = 0;
 
 // S T R I N G S
 char str01[12] = "Hello, I am";
@@ -841,8 +842,8 @@ void WiFiFetchStatus(uint8_t r) {
   msg.qos = QOS0;
   msg.retained = 0;
 	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
-	if (rc != 0) {
-    LOOP_FOREVER();
+	while (rc != 0) {
+    rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
   }
 }
 	
@@ -859,8 +860,8 @@ void WiFiFetchPins(uint8_t r) {
   msg.qos = QOS0;
   msg.retained = 0;
 	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
-	if (rc != 0) {
-    LOOP_FOREVER();
+	while (rc != 0) {
+    rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
   }
 }
 
@@ -885,8 +886,8 @@ void WiFiPushStatus(uint8_t r, uint8_t s, uint8_t status) {
 	msg.qos = QOS0;
 	msg.retained = 0;
 	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
-	if (rc != 0) {
-		LOOP_FOREVER();
+	while (rc != 0) {
+		rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
 	}
 }
 
@@ -908,81 +909,81 @@ void WiFiPushPins(uint8_t r, uint8_t s, uint8_t* pin) {
 	msg.qos = QOS0;
 	msg.retained = 0;
 	rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
-	if (rc != 0) {
-		LOOP_FOREVER();
+	while (rc != 0) {
+		rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
 	}
 }
 
-int main(int argc, char** argv)
+int main2(int argc, char** argv)
 {
-	_i32 retVal = -1;
-	
-  retVal = initializeAppVariables();
-  ASSERT_ON_ERROR(retVal);
-	
-	/* Stop WDT and initialize the system-clock of the MCU */
-  stopWDT();
-  initClk();
-
-  retVal = configureSimpleLinkToDefaultState();
-  if (retVal < 0) {
-		if (DEVICE_NOT_IN_STATION_MODE == retVal)
+	while(1) {
+		_i32 retVal = -1;
+		
+		retVal = initializeAppVariables();
+		ASSERT_ON_ERROR(retVal);
+		
+		/* Stop WDT and initialize the system-clock of the MCU */
+		stopWDT();
+		initClk();
+		
+		retVal = configureSimpleLinkToDefaultState();
+		//if (retVal < 0) {
+			//if (DEVICE_NOT_IN_STATION_MODE == retVal)
+				//LOOP_FOREVER();
+		//}
+		
+		retVal = sl_Start(0, 0, 0);
+		if ((retVal < 0) || (ROLE_STA != retVal)) {
 			LOOP_FOREVER();
-	}
-	
-  retVal = sl_Start(0, 0, 0);
-  if ((retVal < 0) || (ROLE_STA != retVal)) {
-		LOOP_FOREVER();
-	}
-	
-  /* Connecting to WLAN AP */
-  retVal = establishConnectionWithAP();
-  if (retVal < 0) {
-		LOOP_FOREVER();
-	}
-	
-  // Obtain MAC Address
-  sl_NetCfgGet(SL_MAC_ADDRESS_GET,NULL,&macAddressLen,(unsigned char *)macAddressVal);
-	
-  // Print MAC Addres to be formatted string
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-          macAddressVal[0], macAddressVal[1], macAddressVal[2], macAddressVal[3], macAddressVal[4], macAddressVal[5]);
-	
-  // Generate 32bit unique ID from TLV Random Number and MAC Address
-  generateUniqueID();
-	
-  int rc = 0;
-  unsigned char buf[100];
-  unsigned char readbuf[100];
+		}
+		
+		/* Connecting to WLAN AP */
+		retVal = establishConnectionWithAP();
+		if (retVal < 0) {
+			LOOP_FOREVER();
+		}
+		
+		// Obtain MAC Address
+		sl_NetCfgGet(SL_MAC_ADDRESS_GET,NULL,&macAddressLen,(unsigned char *)macAddressVal);
+		
+		// Print MAC Addres to be formatted string
+		snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+						macAddressVal[0], macAddressVal[1], macAddressVal[2], macAddressVal[3], macAddressVal[4], macAddressVal[5]);
+		
+		// Generate 32bit unique ID from TLV Random Number and MAC Address
+		generateUniqueID();
+		
+		int rc = 0;
+		unsigned char buf[100];
+		unsigned char readbuf[100];
+		
+		NewNetwork(&n);
+		rc = ConnectNetwork(&n, MQTT_BROKER_SERVER, 1883);
+		
+		if (rc != 0) {
+			LOOP_FOREVER();
+		}
+		
+		MQTTClient(&hMQTTClient, &n, 1000, buf, 100, readbuf, 100);
+		MQTTPacket_connectData cdata = MQTTPacket_connectData_initializer;
+		cdata.MQTTVersion = 3;
+		cdata.clientID.cstring = uniqueID;
+		rc = MQTTConnect(&hMQTTClient, &cdata);
+		/*if (rc != 0) {
+			LOOP_FOREVER();
+		}*/
+		
+		rc = MQTTSubscribe(&hMQTTClient, SUBSCRIBE_TOPIC, QOS0, babyGotBack);
+		/*if (rc != 0) {
+			LOOP_FOREVER();
+		}*/
 
-  NewNetwork(&n);
-  rc = ConnectNetwork(&n, MQTT_BROKER_SERVER, 1883);
-
-  if (rc != 0) {
-		LOOP_FOREVER();
-  }
-
-  MQTTClient(&hMQTTClient, &n, 1000, buf, 100, readbuf, 100);
-  MQTTPacket_connectData cdata = MQTTPacket_connectData_initializer;
-  cdata.MQTTVersion = 3;
-  cdata.clientID.cstring = uniqueID;
-  rc = MQTTConnect(&hMQTTClient, &cdata);
-	if (rc != 0) {
-		LOOP_FOREVER();
-  }
-	
-  rc = MQTTSubscribe(&hMQTTClient, SUBSCRIBE_TOPIC, QOS0, babyGotBack);
-  if (rc != 0) {
-		LOOP_FOREVER();
-  }
-	
 	ST7735_InitR(INITR_REDTAB);
 	LocksInit();
   ButtsInitLP();
   DetsInitLP();
 	KeypadInitLP();
 	
-	while(1) {
 		if (fill) {
 			ST7735_FillScreen(ST7735_BLACK);
 			fill = 0;
@@ -1015,6 +1016,7 @@ int main(int argc, char** argv)
 			}
 		}
 		*/
+		
 		ST7735_SetCursor(5,5);
 		ST7735_OutString(str01);
 		ST7735_DrawCharS(7,64,'s',ST7735_WHITE,ST7735_BLACK,4);
@@ -1025,7 +1027,7 @@ int main(int argc, char** argv)
 		ST7735_SetCursor(2,12);
 		ST7735_OutString(str02);
 		
-		OneShot(SEC_HLF);
+		//OneShot(SEC_HLF);
 		
 		do {
       key = KeypadGet();
@@ -1053,17 +1055,10 @@ int main(int argc, char** argv)
 		}
 		
 		timesUp = 0;
-		OneShot(SEC_10);
+		//OneShot(SEC_10);
 		
 		do {
       key = KeypadGet();
-      if ((key=='5')||(key=='6')||(key=='7')||(key=='8')||(key=='9')||(key=='0')||(key=='*')||(key=='#')) {
-        //ST7735_SetCursor(0,1);
-        //ST7735_OutString("invalid key");
-      } else if (!key) {
-        //ST7735_SetCursor(0,1);
-        //ST7735_OutString("           ");
-      }
     } while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4'));
 		if (timesUp) {
 			timesUp = 0;
@@ -1076,8 +1071,11 @@ int main(int argc, char** argv)
 		str05[5] = key;
 	  slot = KeypadInt(key) - 1;
 		
-		while(1) {}
-		
+		// IT IS GETTING STUCK HERE SOS :(((((((((((((((((((((((((((((((((((((((((((((
+		// IT IS GETTING STUCK HERE SOS :(((((((((((((((((((((((((((((((((((((((((((((
+		// IT IS GETTING STUCK HERE SOS :(((((((((((((((((((((((((((((((((((((((((((((
+		// IT IS GETTING STUCK HERE SOS :(((((((((((((((((((((((((((((((((((((((((((((
+		/*
 		WiFiFetchStatus(RACK);
 		while(!wifiClBk) {
 			rc = MQTTYield(&hMQTTClient, 10);
@@ -1090,6 +1088,8 @@ int main(int argc, char** argv)
 			Delay(10);
 		}
 		wifiClBk = 0;
+		*/
+		
     if (localStatus[slot] == 0) {
 			stat = 0;
 		} else if (localStatus[slot] == 1) {
@@ -1107,7 +1107,7 @@ int main(int argc, char** argv)
 		ST7735_OutString(str04);
 		
 		timesUp = 0;
-		OneShot(SEC_10);
+		//OneShot(SEC_10);
 		
 		do {
 			key = KeypadGet();
@@ -1185,7 +1185,7 @@ int main(int argc, char** argv)
 		
 		LocksUnlk(slot+1);
 		timesUp = 0;
-		OneShot(SEC_30);
+		//OneShot(SEC_30);
 		while(!timesUp) {
 			if (Buttsy(slot+1) && Detsy(slot+1)) {
 				LocksLock(slot+1);
@@ -1309,6 +1309,7 @@ static void babyGotBack(MessageData* data) {
 			} else if (pt[j+4] == 'r') {
 				localStatus[i] = 2;
 			}
+			j += 1;
 		}
 	}
 	
@@ -1514,3 +1515,285 @@ static _i32 initializeAppVariables()
 
     \return     None
 */
+
+int main(void) {
+	
+	/* Stop WDT and initialize the system-clock of the MCU */
+  stopWDT();
+  initClk();
+	
+  LocksInit();
+  ButtsInit();
+  //DetsInit();
+  ST7735_InitR(INITR_REDTAB);
+  KeypadInit();
+  //WiFiInit();
+	
+  while(1) {
+		if (fill) {
+			ST7735_FillScreen(ST7735_BLACK);
+			fill = 0;
+		}
+		timesUp = 0;
+		
+    //localStatus = WiFiFetchStatus();
+    //localPins = WiFiFetchPins();
+		
+		for (uint8_t i = 0; i < SLOTS; i++) {
+			butt = Buttsy(i+1);
+			//det = DetsyLP(i+1);
+			if (butt != localStatus[i]) {
+				localStatus[i] = butt;
+				//WiFiPushStatus(RACK, i, butt);
+			//} else if (det != localStatus[i]) {
+				//localStatus[i] = det;
+				//WiFiPushStatus(RACK, i, det);
+			}
+		}
+		
+		ST7735_SetCursor(5,5);
+		ST7735_OutString(str01);
+		ST7735_DrawCharS(7,64,'s',ST7735_WHITE,ST7735_BLACK,4);
+		ST7735_DrawCharS(31,64,'m',ST7735_WHITE,ST7735_BLACK,4);
+		ST7735_DrawCharS(55,64,'a',ST7735_WHITE,ST7735_BLACK,4);
+		ST7735_DrawCharS(79,64,'c',ST7735_WHITE,ST7735_BLACK,4);
+		ST7735_DrawCharS(103,64,'k',ST7735_WHITE,ST7735_BLACK,4);
+		ST7735_SetCursor(2,12);
+		ST7735_OutString(str02);
+		
+		OneShot(SEC_HLF);
+		
+		do {
+      key = KeypadGet();
+    } while((!timesUp)&&(key!='#'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+		
+		fill = 1;
+		ST7735_FillScreen(ST7735_BLACK);
+		ST7735_SetCursor(2,5);
+		ST7735_OutString(str03);
+		
+		for (uint8_t i = 0; i < SLOTS; i++) {
+			if (localStatus[i]) {
+				ST7735_DrawCharS((22+i*22),74,(0x31+i),ST7735_RED,ST7735_BLACK,3);
+			} else {
+				ST7735_DrawCharS((22+i*22),74,(0x31+i),ST7735_GREEN,ST7735_BLACK,3);
+			}
+		}
+		
+		timesUp = 0;
+		OneShot(SEC_10);
+		
+    do {
+      key = KeypadGet();
+      if ((key=='5')||(key=='6')||(key=='7')||(key=='8')||(key=='9')||(key=='0')||(key=='*')||(key=='#')) {
+        //ST7735_SetCursor(0,1);
+        //ST7735_OutString("invalid key");
+      } else if (!key) {
+        //ST7735_SetCursor(0,1);
+        //ST7735_OutString("           ");
+      }
+    } while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+    //ST7735_SetCursor(0,1);
+    //ST7735_OutString("           ");
+		str05[5] = key;
+	  slot = KeypadInt(key) - 1;
+		
+		//localStatus = WiFiFetchStatus();
+		//localPins = WiFiFetchPins();
+    if (!(localStatus[slot])) {
+			stat = 0;
+		} else {
+			stat = 1;
+		}
+		
+		if (!stat) {
+      //WiFiPushStatus(RACK, slot, 1);
+			//DEBUG
+			//ST7735_SetCursor(0,15);
+			//ST7735_OutString("!stat");
+    } else {
+			//DEBUG
+			//ST7735_SetCursor(0,15);
+			//ST7735_OutString("stat!");
+		}
+		
+		ST7735_FillScreen(ST7735_BLACK);
+    ST7735_SetCursor(3,5);
+		ST7735_OutString(str04);
+		
+		timesUp = 0;
+		OneShot(SEC_10);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        //ST7735_SetCursor(0,3);
+        //ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+		//ST7735_SetCursor(0,3);
+		//ST7735_OutString("*          ");
+		ST7735_DrawCharS((22+0*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
+		pins[0] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        //ST7735_SetCursor(0,3);
+        //ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+		//ST7735_SetCursor(0,3);
+		//ST7735_OutString("* *        ");
+		ST7735_DrawCharS((22+1*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
+		pins[1] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        //ST7735_SetCursor(0,3);
+        //ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+		//ST7735_SetCursor(0,3);
+		//ST7735_OutString("* * *      ");
+		ST7735_DrawCharS((22+2*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
+		pins[2] = KeypadInt(key);
+		
+		do {
+			key = KeypadGet();
+			if ((key=='*')||(key=='#')) {
+        //ST7735_SetCursor(0,3);
+        //ST7735_OutString("invalid key");
+			}
+		} while((!timesUp)&&(key!='1')&&(key!='2')&&(key!='3')&&(key!='4')&&(key!='5')&&(key!='6')&&(key!='7')&&(key!='8')&&(key!='9')&&(key!='0'));
+		if (timesUp) {
+			timesUp = 0;
+			//ST7735_SetCursor(0,13);
+			//ST7735_OutString("TIMES UP");
+			continue;
+		}
+		//ST7735_SetCursor(0,3);
+		//ST7735_OutString("* * * *    ");
+		ST7735_DrawCharS((22+3*22),74,'*',ST7735_WHITE,ST7735_BLACK,3);
+		pins[3] = KeypadInt(key);
+		
+		if (!stat) {
+			localPins[slot][0] = pins[0];
+			localPins[slot][1] = pins[1];
+			localPins[slot][2] = pins[2];
+			localPins[slot][3] = pins[3];
+			//WiFiPushPins(RACK, slot, pins);
+		}
+		
+		//if (localPins[slot] != pins) {
+		if ((localPins[slot][0] != pins[0])||(localPins[slot][1] != pins[1])||(localPins[slot][2] != pins[2])||(localPins[slot][3] != pins[3])) {
+			//ST7735_OutString("Invalid pin!");
+			ST7735_DrawCharS((22+0*22),74,'*',ST7735_RED,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+1*22),74,'*',ST7735_RED,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+2*22),74,'*',ST7735_RED,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+3*22),74,'*',ST7735_RED,ST7735_BLACK,3);
+			continue;
+		} else {
+			ST7735_DrawCharS((22+0*22),74,'*',ST7735_GREEN,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+1*22),74,'*',ST7735_GREEN,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+2*22),74,'*',ST7735_GREEN,ST7735_BLACK,3);
+			ST7735_DrawCharS((22+3*22),74,'*',ST7735_GREEN,ST7735_BLACK,3);
+		}
+		
+		ST7735_FillScreen(ST7735_BLACK);
+    ST7735_SetCursor(3,5);
+		ST7735_OutString(str05);
+		
+		if (!stat) {
+			ST7735_SetCursor(2,7);
+			ST7735_OutString(str06);
+		} else {
+			ST7735_SetCursor(2,7);
+			ST7735_OutString(str07);
+		}
+		
+		//P5OUT |= 0x08;
+		//return 1;
+		
+		//LocksUnlk(slot+1);
+		timesUp = 0;
+		OneShot(SEC_30);
+		while(!timesUp) {
+			//if (Buttsy(slot+1) && Detsy(slot+1)) {
+			if (Buttsy(slot+1)) {
+				//LocksLock(slot+1);
+				//DEBUG
+				ST7735_SetCursor(0,10);
+				ST7735_OutString("lockedWOO");
+				break;
+			}
+		}
+		if (timesUp) {
+			//LocksLock(slot+1);
+			timesUp = 0;
+			//ST7735_SetCursor(0,12);
+			//ST7735_OutString("lockTIMESup");
+			if (!stat) {
+				//WiFiPushStatus(RACK, slot, 0);
+				//WiFiPushPins(RACK, slot, pclr);
+			}
+			continue;
+		}
+		if (stat) {
+			//WiFiPushStatus(RACK, slot, 0);
+			//WiFiPushPins(RACK, slot, pclr);
+		}
+		
+		ST7735_FillScreen(ST7735_BLACK);
+		ST7735_DrawCharS((2+0*18),20,'C',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+1*18),20,'Y',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+2*18),20,'A',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+3*18),20,' ',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+4*18),20,'L',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+5*18),20,'8',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+6*18),20,'R',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+0*18),50,'A',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+1*18),50,'L',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+2*18),50,'L',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+3*18),50,'I',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+4*18),50,'G',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+5*18),50,'8',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawCharS((2+6*18),50,'R',ST7735_WHITE,ST7735_BLACK,3);
+		ST7735_DrawBitmap(2,140,allig8r,126,60);
+		
+		timesUp = 0;
+		OneShot(SEC_02);
+		while(!timesUp) {}
+  }
+}

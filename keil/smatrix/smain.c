@@ -613,10 +613,10 @@ int main1(void) {
 
 int main(void) {
   LocksInit();
-  ButtsInitLP();
-  DetsInitLP();
+  ButtsInit();
+  //DetsInit();
   ST7735_InitR(INITR_REDTAB);
-  KeypadInitLP();
+  KeypadInit();
   //WiFiInit();
 	
   while(1) {
@@ -630,7 +630,7 @@ int main(void) {
     //localPins = WiFiFetchPins();
 		
 		for (uint8_t i = 0; i < SLOTS; i++) {
-			butt = ButtsyLP(i+1);
+			butt = Buttsy(i+1);
 			//det = DetsyLP(i+1);
 			if (butt != localStatus[i]) {
 				localStatus[i] = butt;
@@ -846,7 +846,7 @@ int main(void) {
 		OneShot(SEC_30);
 		while(!timesUp) {
 			//if (Buttsy(slot+1) && Detsy(slot+1)) {
-			if (ButtsyLP(slot+1)) {
+			if (Buttsy(slot+1)) {
 				//LocksLock(slot+1);
 				//DEBUG
 				ST7735_SetCursor(0,10);

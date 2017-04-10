@@ -55,7 +55,7 @@ void TimerA_Init(uint32_t period) {
 	long sr;
 	sr = StartCritical();
 	TIMER_A0->CTL &= ~0x0030; // stop mode
-	TIMER_A0->CTL = 0x0202; // SMCLK, enable int
+	TIMER_A0->CTL = 0x02C2; // SMCLK, div /8, enable int
 	TIMER_A0->CCTL[0] = 0x0010; // enable CC int
 	TIMER_A0->CCR[0] = period - 1;
 	TIMER_A0->EX0 &= ~0x0007; // div /1
@@ -74,7 +74,7 @@ void KeypadInitLP(void) {
   LastKey = 0;
   P4DIR &= ~0x0F;                  // make P7.3-P7.0 in (P7.3-P7.0 rows)
   P5DIR &= ~0x07;                  // make P4.3-P4.0 in (P4.3-P4.0 columns)
-	TimerA_Init(75000);							 // 25 ms polling
+	TimerA_Init(150000);							 // 25 ms polling
   EndCritical(sr);
 }
 
@@ -86,6 +86,7 @@ void KeypadInit(void) {
   LastKey = 0;
 	P1DIR  &= ~0x0F;
 	P10DIR &= ~0x0E;
+	TimerA_Init(150000);							 // 25 ms polling
   //SysTick_Init(1200000);             // Program 5.12, 25 ms polling
   EndCritical(sr);
 }
@@ -159,7 +160,7 @@ void TA0_0_IRQHandler(void) {
 	TIMER_A0->CCTL[0] &= ~0x0001;
 	uint8_t thisKey;
 	int16_t n;
-  thisKey = MatrixKeypad_ScanLP(&n); // scan
+  thisKey = MatrixKeypad_Scan(&n); // scan
   if((thisKey != LastKey) && (n == 1)){
     MatrixFifo_Put(thisKey);
     LastKey = thisKey;

@@ -598,12 +598,12 @@ ARM Macro Assembler    Page 10
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
 erwork --depend=.\objects\startup_msp432p401r_uvision.d -o.\objects\startup_msp
-432p401r_uvision.o -IC:\Users\Jason\Desktop\SMACKWIFI\KEIL\RTE\_CC3100BOOST_MQT
-T-TwitterLED_MSP432P401R -IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include -I
-C:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device\Include --pred
-efine="__UVISION_VERSION SETA 522" --predefine="_RTE_ SETA 1" --predefine="__MS
-P432P401R__ SETA 1" --list=.\listings\startup_msp432p401r_uvision.lst RTE\Devic
-e\MSP432P401R\startup_msp432p401r_uvision.s
+432p401r_uvision.o -IC:\Users\Jason\Documents\GitHub\smack\SMACKWIFI\KEIL\RTE\_
+CC3100BOOST_MQTT-TwitterLED_MSP432P401R -IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\C
+MSIS\Include -IC:\Keil_v5\ARM\PACK\TexasInstruments\MSP432P4xx_DFP\2.2.1\Device
+\Include --predefine="__UVISION_VERSION SETA 522" --predefine="_RTE_ SETA 1" --
+predefine="__MSP432P401R__ SETA 1" --list=.\listings\startup_msp432p401r_uvisio
+n.lst RTE\Device\MSP432P401R\startup_msp432p401r_uvision.s
 
 
 

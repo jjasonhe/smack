@@ -35,6 +35,8 @@
 #include "msp432p401r.h"
 #include "Keypad.h"
 #include "FIFO.h"
+//#include "driverlib.h"
+#include "sl_common.h"
 
 void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
@@ -49,15 +51,18 @@ AddIndexFifo(Matrix, FIFOSIZE, uint8_t, FIFOSUCCESS, FIFOFAIL) // create a FIFO
 volatile uint32_t HeartBeat;  // incremented every 25 ms
 static uint8_t LastKey;
 
-void SysTick_Init(uint32_t period){
+void TimerA_Init(uint32_t period) {
 	long sr;
-  sr = StartCritical();
-  SYSTICK_STCSR = 0;               // 1) disable SysTick during setup
-  SYSTICK_STRVR = period - 1;      // 2) reload value sets period
-  SYSTICK_STCVR = 0;               // 3) any write to current clears it
-  SCB_SHPR3 = (SCB_SHPR3&0x00FFFFFF)|0x40000000; // priority 2
-  SYSTICK_STCSR = 0x00000007;      // 4) enable SysTick with core clock and interrupts
-  EndCritical(sr);
+	sr = StartCritical();
+	TIMER_A0->CTL &= ~0x0030; // stop mode
+	TIMER_A0->CTL = 0x0202; // SMCLK, enable int
+	TIMER_A0->CCTL[0] = 0x0010; // enable CC int
+	TIMER_A0->CCR[0] = period - 1;
+	TIMER_A0->EX0 &= ~0x0007; // div /1
+	NVIC->IP[2] = (NVIC->IP[2]&0xFFFFFF00)|0x00000040; // priority 2
+	NVIC->ISER[0] = 0x00000100;
+	TIMER_A0->CTL |= 0x0014;
+	EndCritical(sr);
 }
 
 void KeypadInitLP(void) {
@@ -69,8 +74,7 @@ void KeypadInitLP(void) {
   LastKey = 0;
   P4DIR &= ~0x0F;                  // make P7.3-P7.0 in (P7.3-P7.0 rows)
   P5DIR &= ~0x07;                  // make P4.3-P4.0 in (P4.3-P4.0 columns)
-  // **** SysTick interrupt initialization ****
-  SysTick_Init(75000);             // Program 5.12, 25 ms polling
+	TimerA_Init(1200000);							 // 25 ms polling
   EndCritical(sr);
 }
 
@@ -82,7 +86,8 @@ void KeypadInit(void) {
   LastKey = 0;
 	P1DIR  &= ~0x0F;
 	P10DIR &= ~0x0E;
-  SysTick_Init(1200000);             // Program 5.12, 25 ms polling
+	TimerA_Init(1200000);							 // 25 ms polling
+  //SysTick_Init(1200000);             // Program 5.12, 25 ms polling
   EndCritical(sr);
 }
 
@@ -151,10 +156,11 @@ uint8_t MatrixKeypad_Scan(int16_t *Num){
   return key;
 }
 
-void SysTick_Handler(void){
+void TA0_0_IRQHandler(void) {
+	TIMER_A0->CCTL[0] &= ~0x0001;
 	uint8_t thisKey;
 	int16_t n;
-  thisKey = MatrixKeypad_ScanLP(&n); // scan
+  thisKey = MatrixKeypad_Scan(&n); // scan
   if((thisKey != LastKey) && (n == 1)){
     MatrixFifo_Put(thisKey);
     LastKey = thisKey;
