@@ -27,21 +27,25 @@ Project File Date:  03/24/2017
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 4 (build 422)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Rebuild target 'CC3100BOOST_MQTT-TwitterLED_MSP432P401R'
-compiling Locks.c...
 compiling Dets.c...
 ..\Dets.c(78): warning:  #940-D: missing return statement at end of non-void function "DetsyLP" 
   }
 ..\Dets.c(107): warning:  #940-D: missing return statement at end of non-void function "Detsy" 
   }
 ..\Dets.c: 2 warnings, 0 errors
+compiling LCD.c...
+compiling Locks.c...
 compiling Butts.c...
 ..\Butts.c(81): warning:  #940-D: missing return statement at end of non-void function "ButtsyLP" 
   }
-..\Butts.c: 2 warnings, 0 errors
-#940-D: missing return statement at end of non-void function "Buttsy" 
+..\Butts.c(110): warning:  #940-D: missing return statement at end of non-void function "Buttsy" 
   }
-compiling LCD.c...
+..\Butts.c: 2 warnings, 0 errors
+compiling comp_e.c...
 compiling Keypad.c...
+compiling aes256.c...
+compiling adc14.c...
+compiling cli_uart.c...
 compiling board.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
@@ -106,19 +110,25 @@ i32 initializeAppVariables();
   static void displayBanner();
 ..\main.c(87): warning:  #1295-D: Deprecated declaration generateUniqueID - give arg types
   static void generateUniqueID();
+..\main.c(922): warning:  #550-D: variable "retVal"  was set but never used
+  { _i32 retVal = -1;
+..\main.c(947): warning:  #550-D: variable "rc"  was set but never used
+    int rc = 0;
+..\main.c(1444): warning:  #550-D: variable "retVal"  was set but never used
+      _i32 retVal = 0;
 ..\main.c(84): warning:  #177-D: function "displayBanner"  was declared but never referenced
   static void displayBanner();
-..\main.c(1256): warning:  #177-D: function "messageArrived"  was declared but never referenced
-  static void messageArrived(MessageData* data) {
-..\main.c: 21 warnings, 0 errors
-compiling comp_e.c...
-compiling adc14.c...
+..\main.c(85): warning:  #177-D: function "messageArrived"  was declared but never referenced
+  static void messageArrived(MessageData*);
+..\main.c: 22 warnings, 0 errors
 compiling cpu.c...
-compiling aes256.c...
-compiling cli_uart.c...
 compiling crc32.c...
-compiling fpu.c...
+compiling cs.c...
 compiling dma.c...
+compiling fpu.c...
+compiling interrupt.c...
+compiling flash.c...
+compiling mpu.c...
 compiling gpio.c...
 ..\driverlib\MSP432P4xx\gpio.c(71): warning:  #1296-D: extended constant initialiser used
       (uint32_t)
@@ -143,26 +153,21 @@ compiling gpio.c...
 ..\driverlib\MSP432P4xx\gpio.c(81): warning:  #1296-D: extended constant initialiser used
       (uint32_t)PJ
 ..\driverlib\MSP432P4xx\gpio.c: 11 warnings, 0 errors
-compiling cs.c...
+compiling pcm.c...
 compiling i2c.c...
-compiling flash.c...
-compiling interrupt.c...
-compiling reset.c...
 compiling pmap.c...
-compiling mpu.c...
 compiling ref_a.c...
 compiling pss.c...
-compiling pcm.c...
+compiling reset.c...
 compiling rtc_c.c...
 compiling sysctl.c...
-compiling uart.c...
-compiling systick.c...
-compiling timer32.c...
-compiling timer_a.c...
 compiling spi.c...
-compiling MQTTConnectServer.c...
+compiling systick.c...
+compiling timer_a.c...
 compiling MQTTConnectClient.c...
+compiling MQTTConnectServer.c...
 compiling MQTTDeserializePublish.c...
+compiling timer32.c...
 compiling MQTTFormat.c...
 ..\mqtt\MQTTFormat.c(122): warning:  #550-D: variable "strindex"  was set but never used
   	int strindex = 0;
@@ -173,22 +178,15 @@ compiling MQTTFormat.c...
 ..\mqtt\MQTTFormat.c: 3 warnings, 0 errors
 compiling MQTTSerializePublish.c...
 compiling MQTTPacket.c...
-compiling MQTTSubscribeClient.c...
+compiling wdt_a.c...
+compiling uart.c...
 compiling MQTTSubscribeServer.c...
+compiling MQTTSubscribeClient.c...
 compiling MQTTUnsubscribeClient.c...
 compiling MQTTUnsubscribeServer.c...
-compiling wdt_a.c...
 compiling MQTTCC3100.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
-..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
-  void CC3100_disable();
-..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
-  void CC3100_InterruptDisable();
-..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
-  void stopWDT();
-..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
-  void initClk();
 ..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
   void initLEDs();
 ..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
@@ -236,84 +234,6 @@ compiling MQTTClient.c...
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
 ..\mqtt\MQTTClient.c: 12 warnings, 0 errors
-compiling flowcont.c...
-..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
-  void CC3100_enable();
-..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
-  void CC3100_disable();
-..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
-  void CC3100_InterruptDisable();
-..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
-  void stopWDT();
-..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
-  void initClk();
-..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
-  void initLEDs();
-..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
-  unsigned char GetLEDStatus();
-..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
-  void MaskIntHdlr();
-..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
-  void UnMaskIntHdlr();
-..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
-  void set_rts();
-..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
-  void clear_rts();
-..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
-  void initAntSelGPIO();
-..\simplelink\source\flowcont.c: 12 warnings, 0 errors
-compiling netapp.c...
-..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
-  void CC3100_enable();
-..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
-  void CC3100_disable();
-..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
-  void CC3100_InterruptDisable();
-..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
-  void stopWDT();
-..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
-  void initClk();
-..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
-  void initLEDs();
-..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
-  unsigned char GetLEDStatus();
-..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
-  void MaskIntHdlr();
-..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
-  void UnMaskIntHdlr();
-..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
-  void set_rts();
-..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
-  void clear_rts();
-..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
-  void initAntSelGPIO();
-..\simplelink\source\netapp.c: 12 warnings, 0 errors
-compiling fs.c...
-..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
-  void CC3100_enable();
-..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
-  void CC3100_disable();
-..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
-  void CC3100_InterruptDisable();
-..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
-  void stopWDT();
-..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
-  void initClk();
-..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
-  void initLEDs();
-..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
-  unsigned char GetLEDStatus();
-..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
-  void MaskIntHdlr();
-..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
-  void UnMaskIntHdlr();
-..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
-  void set_rts();
-..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
-  void clear_rts();
-..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
-  void initAntSelGPIO();
-..\simplelink\source\fs.c: 12 warnings, 0 errors
 compiling device.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
@@ -340,7 +260,7 @@ compiling device.c...
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
 ..\simplelink\source\device.c: 12 warnings, 0 errors
-compiling driver.c...
+compiling fs.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
 ..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
@@ -365,9 +285,33 @@ compiling driver.c...
   void clear_rts();
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
-..\simplelink\source\driver.c: 12 warnings, 0 errors
-compiling uart_cc3100.c...
-assembling startup_msp432p401r_uvision.s...
+..\simplelink\source\fs.c: 12 warnings, 0 errors
+compiling flowcont.c...
+..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
+  void CC3100_enable();
+..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
+  void CC3100_disable();
+..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
+  void CC3100_InterruptDisable();
+..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
+  void stopWDT();
+..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
+  void initClk();
+..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
+  void initLEDs();
+..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
+  unsigned char GetLEDStatus();
+..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
+  void MaskIntHdlr();
+..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
+  void UnMaskIntHdlr();
+..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
+  void set_rts();
+..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
+  void clear_rts();
+..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
+  void initAntSelGPIO();
+..\simplelink\source\flowcont.c: 12 warnings, 0 errors
 compiling netcfg.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
@@ -420,6 +364,87 @@ compiling nonos.c...
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
 ..\simplelink\source\nonos.c: 12 warnings, 0 errors
+compiling netapp.c...
+..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
+  void CC3100_enable();
+..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
+  void CC3100_disable();
+..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
+  void CC3100_InterruptDisable();
+..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
+  void stopWDT();
+..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
+  void initClk();
+..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
+  void initLEDs();
+..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
+  unsigned char GetLEDStatus();
+..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
+  void MaskIntHdlr();
+..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
+  void UnMaskIntHdlr();
+..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
+  void set_rts();
+..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
+  void clear_rts();
+..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
+  void initAntSelGPIO();
+..\simplelink\source\netapp.c: 12 warnings, 0 errors
+compiling driver.c...
+..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
+  void CC3100_enable();
+..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
+  void CC3100_disable();
+..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
+  void CC3100_InterruptDisable();
+..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
+  void stopWDT();
+..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
+  void initClk();
+..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
+  void initLEDs();
+..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
+  unsigned char GetLEDStatus();
+..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
+  void MaskIntHdlr();
+..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
+  void UnMaskIntHdlr();
+..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
+  void set_rts();
+..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
+  void clear_rts();
+..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
+  void initAntSelGPIO();
+..\simplelink\source\driver.c: 12 warnings, 0 errors
+compiling uart_cc3100.c...
+assembling startup_msp432p401r_uvision.s...
+compiling system_msp432p401r.c...
+compiling socket.c...
+..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
+  void CC3100_enable();
+..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
+  void CC3100_disable();
+..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
+  void CC3100_InterruptDisable();
+..\board\board.h(162): warning:  #1295-D: Deprecated declaration stopWDT - give arg types
+  void stopWDT();
+..\board\board.h(175): warning:  #1295-D: Deprecated declaration initClk - give arg types
+  void initClk();
+..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
+  void initLEDs();
+..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
+  unsigned char GetLEDStatus();
+..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
+  void MaskIntHdlr();
+..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
+  void UnMaskIntHdlr();
+..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
+  void set_rts();
+..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
+  void clear_rts();
+..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
+  void initAntSelGPIO();
+..\simplelink\source\socket.c: 12 warnings, 0 errors
 compiling spawn.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
@@ -449,24 +474,6 @@ compiling spawn.c...
 compiling spi_cc3100.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
-..\board\board.h(188): warning:  #1295-D: Deprecated declaration initLEDs - give arg types
-  void initLEDs();
-..\board\board.h(240): warning:  #1295-D: Deprecated declaration GetLEDStatus - give arg types
-  unsigned char GetLEDStatus();
-..\board\board.h(264): warning:  #1295-D: Deprecated declaration MaskIntHdlr - give arg types
-  void MaskIntHdlr();
-..\board\board.h(275): warning:  #1295-D: Deprecated declaration UnMaskIntHdlr - give arg types
-  void UnMaskIntHdlr();
-..\board\board.h(286): warning:  #1295-D: Deprecated declaration set_rts - give arg types
-  void set_rts();
-..\board\board.h(297): warning:  #1295-D: Deprecated declaration clear_rts - give arg types
-  void clear_rts();
-..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
-  void initAntSelGPIO();
-..\spi_cc3100\spi_cc3100.c: 12 warnings, 0 errors
-compiling socket.c...
-..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
-  void CC3100_enable();
 ..\board\board.h(123): warning:  #1295-D: Deprecated declaration CC3100_disable - give arg types
   void CC3100_disable();
 ..\board\board.h(149): warning:  #1295-D: Deprecated declaration CC3100_InterruptDisable - give arg types
@@ -489,7 +496,7 @@ compiling socket.c...
   void clear_rts();
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
-..\simplelink\source\socket.c: 12 warnings, 0 errors
+..\spi_cc3100\spi_cc3100.c: 12 warnings, 0 errors
 compiling wlan.c...
 ..\board\board.h(110): warning:  #1295-D: Deprecated declaration CC3100_enable - give arg types
   void CC3100_enable();
@@ -516,10 +523,9 @@ compiling wlan.c...
 ..\board\board.h(308): warning:  #1295-D: Deprecated declaration initAntSelGPIO - give arg types
   void initAntSelGPIO();
 ..\simplelink\source\wlan.c: 12 warnings, 0 errors
-compiling system_msp432p401r.c...
 linking...
-Program Size: Code=8104 RO-data=17604 RW-data=276 ZI-data=2900  
-".\Objects\CC3100BOOST_MQTT-TwitterLED_MSP432P401R.axf" - 0 Error(s), 202 Warning(s).
+Program Size: Code=31032 RO-data=18216 RW-data=1252 ZI-data=3292  
+".\Objects\CC3100BOOST_MQTT-TwitterLED_MSP432P401R.axf" - 0 Error(s), 206 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -545,12 +551,12 @@ Package Vendor: TexasInstruments
    * Component: ARM::CMSIS:CORE:5.0.1
 
    * Component: TexasInstruments::Device:Startup:2.2.1
-      Source file:   Device\Source\system_msp432p401r.c
-      Include file:  Device\Include\msp_compatibility.h
       Source file:   Device\Source\startup_msp432p401r_uvision.s
+      Source file:   Device\Source\system_msp432p401r.c
       Source file:   Examples\EmptyMain\main.c
+      Include file:  Device\Include\msp_compatibility.h
       Source file:   Examples\BlinkLED\blinkLED.c
-Build Time Elapsed:  00:00:11
+Build Time Elapsed:  00:00:13
 </pre>
 </body>
 </html>

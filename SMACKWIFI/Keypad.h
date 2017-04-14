@@ -11,13 +11,13 @@
 // [7] [8] [9]
 // [*] [0] [#]
 /* TESTING
-	 P4.3 COL1
+	 P4.0 COL1
 	 P4.2 COL2
-	 P4.1 COL3
-	 P4.0 ROW1
+	 P4.3 COL3
+	 P5.0 ROW1
 	 P5.2 ROW2
-	 P5.1 ROW3
-	 P5.0 ROW4
+	 P5.3 ROW3
+	 P5.4 ROW4
 */
 
 /* KEYPAD

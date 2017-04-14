@@ -12,13 +12,13 @@
 // [7] [8] [9]
 // [*] [0] [#]
 /* TESTING
-	 P4.3 COL1
+	 P4.0 COL1
 	 P4.2 COL2
-	 P4.1 COL3
-	 P4.0 ROW1
+	 P4.3 COL3
+	 P5.0 ROW1
 	 P5.2 ROW2
-	 P5.1 ROW3
-	 P5.0 ROW4
+	 P5.3 ROW3
+	 P5.4 ROW4
 */
 
 /* KEYPAD
@@ -55,7 +55,7 @@ void TimerA_Init(uint32_t period) {
 	long sr;
 	sr = StartCritical();
 	TIMER_A0->CTL &= ~0x0030; // stop mode
-	TIMER_A0->CTL = 0x02C2; // SMCLK, div /8, enable int
+	TIMER_A0->CTL = 0x0202; // SMCLK, enable int
 	TIMER_A0->CCTL[0] = 0x0010; // enable CC int
 	TIMER_A0->CCR[0] = period - 1;
 	TIMER_A0->EX0 &= ~0x0007; // div /1
@@ -72,9 +72,9 @@ void KeypadInitLP(void) {
   MatrixFifo_Init();               // initialize empty FIFOs
   HeartBeat = 0;
   LastKey = 0;
-  P4DIR &= ~0x0F;                  // make P7.3-P7.0 in (P7.3-P7.0 rows)
-  P5DIR &= ~0x07;                  // make P4.3-P4.0 in (P4.3-P4.0 columns)
-	TimerA_Init(150000);							 // 25 ms polling
+	P4DIR &= ~0x0D;
+	P5DIR &= ~0x1D;
+	TimerA_Init(75000);							 // 25 ms polling
   EndCritical(sr);
 }
 
@@ -86,7 +86,6 @@ void KeypadInit(void) {
   LastKey = 0;
 	P1DIR  &= ~0x0F;
 	P10DIR &= ~0x0E;
-	TimerA_Init(150000);							 // 25 ms polling
   //SysTick_Init(1200000);             // Program 5.12, 25 ms polling
   EndCritical(sr);
 }
@@ -111,12 +110,10 @@ uint8_t MatrixKeypad_ScanLP(int16_t *Num){
   key = 0;    // default values
   pt = &ScanTab[0];
   while(pt->direction){
-    P4DIR = ((pt->direction)&0x01);
-		P5DIR = (((pt->direction)&0x08)>>3)|(((pt->direction)&0x04)>>1)|(((pt->direction)&0x02)<<1);
-		P4OUT &= ~0x01;                // DIRn=0, OUTn=HiZ; DIRn=1, OUTn=0
-		P5OUT &= ~0x07;                // DIRn=0, OUTn=HiZ; DIRn=1, OUTn=0
+		P5DIR = (((pt->direction)&0x01))|(((pt->direction)&0x02)<<1)|(((pt->direction)&0x04)<<1)|(((pt->direction)&0x08)<<1);
+		P5OUT &= ~0x1D;
     for(j=1; j<=10; j++);          // very short delay
-    column = ((P4IN&0x02)<<1)|((P4IN&0x04)>>1)|((P4IN&0x08)>>3);
+		column = ((P4IN&0x01))|((P4IN&0x04)>>1)|((P4IN&0x08)>>1);
     for(j=0; j<=2; j++){
       if((column&0x01)==0){
         key = pt->keycode[j];
@@ -160,7 +157,7 @@ void TA0_0_IRQHandler(void) {
 	TIMER_A0->CCTL[0] &= ~0x0001;
 	uint8_t thisKey;
 	int16_t n;
-  thisKey = MatrixKeypad_Scan(&n); // scan
+  thisKey = MatrixKeypad_ScanLP(&n); // scan
   if((thisKey != LastKey) && (n == 1)){
     MatrixFifo_Put(thisKey);
     LastKey = thisKey;
