@@ -6,8 +6,9 @@ This repo is for the winning senior design project from the University of Texas 
 
 ## Usage Requirements
 
-* Keil IDE
-* 
+* Keil uVision 5 (not 4, like we use in 319K/445L)
+* Energia (for some older files)
+* Arduino (for even older files)
 
 ## Folder Structure
 
